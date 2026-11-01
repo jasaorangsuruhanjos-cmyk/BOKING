@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JOS | Portal Operasional Mitra</title>
+<style>
+:root{--navy:#12325b;--blue:#1769aa;--gold:#f5b82e;--bg:#f3f6fa;--ink:#172033;--muted:#667085;--green:#12805c;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Arial,sans-serif}
+header{background:linear-gradient(135deg,#12325b,#1769aa);color:#fff;padding:24px 16px;text-align:center}
+.logo{width:72px;height:72px;border-radius:18px;background:#fff;color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:25px;margin:0 auto 10px;border:3px solid var(--gold)}
+header h1{font-size:22px;margin:4px 0}header p{margin:4px 0 0;color:#e4edf8;font-size:14px}.topbar{max-width:760px;margin:0 auto;display:flex;justify-content:flex-end}.logout{width:auto;margin:0 0 10px;background:#fff;color:var(--navy);padding:9px 14px}.login-wrap{max-width:440px;margin:28px auto}.login-logo{width:54px;height:54px;border-radius:15px;background:#eaf2fb;color:var(--navy);display:grid;place-items:center;font-weight:900;font-size:20px;margin:0 auto 12px}.login-title{text-align:center}.login-title p{color:var(--muted);font-size:13px}.field-hint{font-size:12px;color:var(--muted);margin-top:5px}
+main{max-width:760px;margin:18px auto;padding:0 12px 30px}
+.card{background:#fff;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 3px 14px #1720330d;border:1px solid #e5eaf1}
+h2{font-size:18px;margin:0 0 12px;color:var(--navy)}label{display:block;font-size:14px;font-weight:700;margin:12px 0 6px}
+input,select,textarea,button{font:inherit;width:100%;border-radius:10px}
+input,select,textarea{padding:12px;border:1px solid #cbd5e1;background:#fff;color:var(--ink)}
+button{border:0;padding:13px 15px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;margin-top:12px}
+button.secondary{background:#e8eef6;color:var(--navy)}button:disabled{opacity:.55;cursor:not-allowed}
+.note{font-size:13px;color:var(--muted)}.status{padding:11px 12px;border-radius:10px;background:#eef5ff;color:#164a7b;margin-top:12px;white-space:pre-wrap}
+.error{background:#fff0ef;color:var(--red)}.success{background:#eaf8f1;color:#086744}
+.order-details{display:grid;grid-template-columns:1fr 1fr;gap:10px}.detail{background:#f7f9fc;border-radius:10px;padding:10px;overflow-wrap:anywhere}.detail small{display:block;color:var(--muted);font-size:12px}.detail strong{font-size:14px}
+.steps{display:grid;gap:8px}.step{padding:10px;border:1px solid #e3e8ef;border-radius:10px;font-size:14px}.step.current{border-color:var(--blue);background:#edf6ff;font-weight:700}.step.done{border-color:#9bd7bb;background:#effaf4}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:10px 0 24px}
+@media(max-width:460px){.order-details{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo" aria-label="Logo JOS">JOS</div>
+  <h1>Portal Operasional Mitra JOS</h1>
+  <p>Portal resmi mitra untuk mengelola pesanan dan progres pekerjaan.</p>
+</header>
+<main>
+  <section class="card login-wrap" id="loginCard">
+    <div class="login-logo">JOS</div>
+    <div class="login-title"><h2>Login Mitra JOS</h2><p>Masuk menggunakan nomor WhatsApp dan kata sandi akun mitra yang dibuat oleh admin.</p></div>
+    <form id="loginForm">
+      <label for="loginPhone">Nomor WhatsApp</label>
+      <input id="loginPhone" type="tel" inputmode="tel" autocomplete="username" placeholder="08xxxxxxxxxx" required>
+      <label for="loginPassword">Kata Sandi</label>
+      <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Masukkan kata sandi" required>
+      <button id="loginBtn" type="submit">Masuk ke Portal Mitra</button>
+    </form>
+    <p class="field-hint">Belum memiliki akun? Hubungi admin JOS. Pendaftaran mandiri tidak tersedia.</p>
+    <div id="loginMsg" class="status" hidden></div>
+  </section>
+  <div id="mitraPortal" hidden>
+  <div class="topbar"><button type="button" class="logout" id="logoutBtn">Keluar</button></div>
+  <section class="card">
+    <h2>Pesanan Tersedia</h2>
+    <p class="note">Pilih pekerjaan yang sesuai. Isi nama dan nomor WhatsApp, lalu tekan Gabung. Setelah kuota terpenuhi, admin menetapkan koordinator. Hanya koordinator yang dapat memperbarui progres utama.</p>
+    <label for="mitraName">Nama Mitra</label>
+    <input id="mitraName" placeholder="Nama mitra yang mengerjakan" autocomplete="name" required>
+    <button id="refreshBtn" class="secondary">Perbarui Pesanan</button>
+    <div id="findMsg" class="status" hidden></div>
+    <div id="availableOrders" style="display:grid;gap:12px;margin-top:12px"></div>
+  </section>
+
+  <section class="card" id="orderCard" hidden>
+    <h2>Informasi Pesanan</h2>
+    <div class="order-details" id="orderDetails"></div>
+    <div id="teamInfo" class="status" style="margin-top:12px"></div>
+    <button type="button" id="reloadDetailBtn" class="secondary">Perbarui Detail / Cek Penunjukan Koordinator</button>
+  </section>
+
+  <section class="card" id="progressCard" hidden>
+    <h2>Pembaruan Progres Pekerjaan</h2>
+    <div class="steps" id="steps">
+      <div class="step">1. Pesanan diterima</div>
+      <div class="step">2. Pesanan dikonfirmasi oleh mitra</div>
+      <div class="step">3. Menunggu konfirmasi pembayaran</div>
+      <div class="step">4. Mitra dalam perjalanan ke lokasi — foto bukti wajib</div>
+      <div class="step">5. Pekerjaan dimulai — foto kondisi awal wajib</div>
+      <div class="step">6. Pekerjaan selesai — foto hasil pekerjaan wajib</div>
+      <div class="step">7. Menunggu verifikasi penyelesaian</div>
+      <div class="step">8. Pesanan dinyatakan selesai</div>
+    </div>
+    <label for="nextStatus">Pilih pembaruan status</label>
+    <select id="nextStatus">
+      <option value="">-- Pilih status --</option>
+      <option value="Pesanan Diambil Mitra">Konfirmasi pengambilan pesanan</option>
+      <option value="Menunggu Pembayaran">Menunggu konfirmasi pembayaran</option>
+      <option value="Menuju Lokasi">Dalam perjalanan ke lokasi</option>
+      <option value="Mulai Pekerjaan">Mulai pekerjaan</option>
+      <option value="Pekerjaan Selesai">Pekerjaan selesai</option>
+      <option value="Menunggu Konfirmasi Penyelesaian">Menunggu verifikasi penyelesaian</option>
+    </select>
+    <div id="paymentNotice" class="status" hidden>Perjalanan ke lokasi hanya boleh dimulai setelah admin mengonfirmasi pembayaran. Mitra tidak dapat mengonfirmasi pembayaran dari halaman ini.</div>
+    <label for="evidence">Dokumentasi Foto (wajib pada tahap perjalanan, awal pekerjaan, dan hasil pekerjaan)</label>
+    <input id="evidence" type="file" accept="image/*" capture="environment">
+    <p class="note">Unggah foto yang jelas dan sesuai dengan tahap pekerjaan. Foto akan disimpan di penyimpanan bukti JOS dan dikaitkan dengan kode pesanan serta tahapan terkait. Ukuran maksimum 8 MB per foto.</p>
+    <label for="stageNote">Catatan untuk admin (opsional)</label>
+    <textarea id="stageNote" rows="3" placeholder="Tambahkan informasi penting terkait progres pekerjaan"></textarea>
+    <button id="updateBtn">Simpan Pembaruan</button>
+    <div id="updateMsg" class="status" hidden></div>
+  </section>
+  <section class="card">
+    <h2>Ketentuan Operasional</h2>
+    <p class="note">Mitra hanya dapat memulai perjalanan setelah pembayaran dikonfirmasi oleh admin. Penetapan status akhir “Pesanan Selesai” dilakukan setelah verifikasi oleh admin atau pelanggan.</p>
+    <p class="note">Apabila terjadi kendala saat membuka pesanan, menyimpan status, atau mengunggah foto, silakan hubungi admin JOS. Jangan membagikan kata sandi atau informasi akses sistem kepada pihak lain.</p>
+  </section>
+  </div>
+  <footer>JOS — Jasa Orang Suruhan | Portal Operasional Mitra</footer>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* Konfigurasi memakai URL dan publishable key publik proyek JOS. Jangan pernah memasukkan secret/service-role key di sini. */
+const SUPABASE_URL = 'https://aqhfkcdglfijdtsgyzmq.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Ymh1RsVe9Ba9No27l58jGA_hpD04lSw';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const $ = id => document.getElementById(id);
+let currentOrder = null;
+let isCoordinator = false;
+let currentMitraPhone = '';
+let currentSession = null;
+function normalizePhone(value){let n=String(value||'').replace(/[^0-9]/g,'');if(n.startsWith('0'))n='62'+n.slice(1);if(!n.startsWith('62'))n='62'+n;return '+'+n;}
+function showLogin(msg,type='error'){show('loginMsg',msg,type);}
+const photoStages = ['Menuju Lokasi','Mulai Pekerjaan','Pekerjaan Selesai'];
+const stageOrder = ['Tersedia','Pesanan Diambil Mitra','Menunggu Pembayaran','Menuju Lokasi','Mulai Pekerjaan','Pekerjaan Selesai','Menunggu Konfirmasi Penyelesaian','Pesanan Selesai'];
+function show(id,msg,type=''){const el=$(id);el.hidden=false;el.className='status '+type;el.textContent=msg}
+function money(v){return v==null?'—':new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(v)}
+function safe(v){return v==null||v===''?'—':String(v)}
+function renderOrder(o){
+ currentOrder=o;isCoordinator=!!o.is_koordinator;$('orderCard').hidden=false;$('progressCard').hidden=false;
+ const pairs=[['Kode Order',o.kode_order],['Status',o.status],['Pelanggan',o.nama_pelanggan],['Layanan',o.nama_layanan],['Alamat',o.alamat],['Harga Jasa',money(o.harga_jasa)],['Upah Mitra',money(o.upah_mitra)],['Anggota Tim',`${o.jumlah_mitra_bergabung ?? 0} / ${o.jumlah_mitra_dibutuhkan ?? 1}`]];
+ $('orderDetails').innerHTML=pairs.map(([k,v])=>`<div class="detail"><small>${k}</small><strong>${safe(v)}</strong></div>`).join('');
+ const team=Array.isArray(o.anggota_tim)?o.anggota_tim:[];
+ $('teamInfo').textContent='Anggota tim: '+(o.jumlah_mitra_bergabung??team.length)+' / '+(o.jumlah_mitra_dibutuhkan??1)+'\n'+(team.length?team.map((m,i)=>`${i+1}. ${m.nama_mitra} — ${m.is_koordinator?'KOORDINATOR':'Anggota'}`).join('\n'):'Data anggota belum tersedia')+'\n'+(isCoordinator?'Anda ditetapkan sebagai koordinator.':'Anda anggota tim. Hanya koordinator yang dapat memperbarui progres utama.');
+ $('progressCard').querySelectorAll('select, input, textarea, #updateBtn').forEach(el=>el.disabled=!isCoordinator);
+ const idx=stageOrder.indexOf(o.status);
+ document.querySelectorAll('.step').forEach((s,i)=>{s.classList.toggle('done',i>=0&&idx>i);s.classList.toggle('current',i===idx)});
+ $('nextStatus').value='';$('evidence').value='';$('stageNote').value='';$('paymentNotice').hidden=true;
+}
+function renderAvailable(list){
+ const box=$('availableOrders');
+ if(!list.length){box.innerHTML='<p class="note">Belum ada pesanan yang membutuhkan mitra.</p>';return;}
+ box.innerHTML=list.map(o=>`<div class="detail" style="border:1px solid #dbe5f0;padding:14px">
+  <strong>${safe(o.nama_layanan)}</strong>
+  <div class="note">Kode: ${safe(o.kode_order)}</div>
+  <div class="note">${safe(o.deskripsi)}</div>
+  <div style="margin-top:7px">Upah mitra: <b>${money(o.upah_mitra)}</b></div>
+  <div class="note">Kuota tim: ${safe(o.jumlah_mitra_bergabung)} / ${safe(o.jumlah_mitra_dibutuhkan)} mitra</div>
+  <button type="button" data-join="${o.id}">Gabung Pesanan</button>
+ </div>`).join('');
+ box.querySelectorAll('[data-join]').forEach(btn=>btn.addEventListener('click',()=>joinOrder(btn.dataset.join,btn)));
+}
+async function loadAvailable(){
+ $('refreshBtn').disabled=true;show('findMsg','Memuat pesanan tersedia…');
+ try{
+  const {data,error}=await db.rpc('daftar_order_tersedia');if(error)throw error;
+  const rows=Array.isArray(data)?data:(data||[]);renderAvailable(rows);show('findMsg',`Daftar pesanan diperbarui. ${rows.length} pesanan tersedia.`,'success');
+ }catch(e){show('findMsg','Gagal memuat daftar pesanan: '+(e.message||e),'error')}
+ finally{$('refreshBtn').disabled=false}
+}
+async function joinOrder(orderId,button){
+ const name=$('mitraName').value.trim(),phone=currentMitraPhone;
+ if(!name||!phone){show('findMsg','Isi nama dan nomor WhatsApp mitra terlebih dahulu.','error');return;}
+ button.disabled=true;show('findMsg','Sedang mendaftarkan Anda ke tim pesanan…');
+ try{
+  const {data,error}=await db.rpc('gabung_order',{p_order_id:orderId,p_nama_mitra:name,p_whatsapp_mitra:phone});
+  if(error)throw error;
+  const result=typeof data==='string'?JSON.parse(data):data;
+  if(!result?.berhasil)throw new Error(result?.pesan||'Tidak dapat bergabung dengan pesanan.');
+  const {data:detail,error:detailError}=await db.rpc('detail_order_mitra',{p_order_id:orderId,p_whatsapp_mitra:phone});
+  if(detailError)throw detailError;
+  const o=typeof detail==='string'?JSON.parse(detail):detail;
+  if(!o?.berhasil)throw new Error(o?.pesan||'Berhasil bergabung, tetapi detail pesanan belum dapat dibuka.');
+  renderOrder(o);show('findMsg',`${result.pesan}. Anggota tim: ${result.jumlah_bergabung}/${result.jumlah_dibutuhkan}.`,'success');
+  $('orderCard').scrollIntoView({behavior:'smooth',block:'start'});await loadAvailable();
+ }catch(e){show('findMsg','Gagal bergabung: '+(e.message||e),'error');button.disabled=false;}
+}
+$('refreshBtn').addEventListener('click',loadAvailable);
+$('reloadDetailBtn').addEventListener('click',async()=>{
+ if(!currentOrder)return;
+ const phone=currentMitraPhone;
+ const {data,error}=await db.rpc('detail_order_mitra',{p_order_id:currentOrder.id,p_whatsapp_mitra:phone});
+ if(error){show('findMsg',error.message,'error');return;}
+ const result=typeof data==='string'?JSON.parse(data):data;
+ if(!result?.berhasil){show('findMsg',result?.pesan||'Detail tidak dapat dimuat','error');return;}
+ renderOrder(result);show('findMsg','Detail diperbarui. Status koordinator: '+(result.is_koordinator?'Anda koordinator':'Anda anggota tim'),'success');
+});
+$('nextStatus').addEventListener('change',()=>{
+ const s=$('nextStatus').value;
+ $('paymentNotice').hidden=s!=='Menuju Lokasi';
+ $('evidence').required=photoStages.includes(s);
+});
+$('updateBtn').addEventListener('click',async()=>{
+ if(!currentOrder){show('updateMsg','Cari pesanan terlebih dahulu.','error');return}
+ const next=$('nextStatus').value, name=$('mitraName').value.trim(), phone=currentMitraPhone, file=$('evidence').files[0], note=$('stageNote').value.trim();
+ if(!next){show('updateMsg','Silakan pilih status yang ingin diperbarui.','error');return}
+ if(!name||!phone){show('updateMsg','Lengkapi nama dan nomor WhatsApp mitra sebelum melanjutkan.','error');return}
+ if(photoStages.includes(next)&&!file){show('updateMsg','Dokumentasi foto wajib diunggah untuk tahap pekerjaan ini.','error');return}
+ if(file&&(file.size>8*1024*1024||!file.type.startsWith('image/'))){show('updateMsg','Pilih file gambar maksimal 8 MB.','error');return}
+ if(next==='Menuju Lokasi'&&currentOrder.status!=='Pembayaran Dikonfirmasi'){
+  show('updateMsg','Perjalanan ke lokasi belum dapat dimulai. Mohon tunggu hingga admin mengonfirmasi pembayaran. Status saat ini: '+safe(currentOrder.status),'error');return
+ }
+ $('updateBtn').disabled=true;show('updateMsg','Sedang menyimpan pembaruan status dan dokumentasi…');
+ try{
+  let evidenceUrl=null, evidencePath=null;
+  if(file){
+   const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+   evidencePath=`${currentOrder.kode_order}/${Date.now()}-${next.toLowerCase().replace(/[^a-z0-9]+/g,'-')}.${ext}`;
+   const up=await db.storage.from('booking-evidence').upload(evidencePath,file,{contentType:file.type,upsert:false});
+   if(up.error)throw new Error('Upload foto gagal: '+up.error.message);
+   const pub=db.storage.from('booking-evidence').getPublicUrl(evidencePath);evidenceUrl=pub.data.publicUrl;
+  }
+  const {data:updated,error}=await db.rpc('update_progres_order',{
+   p_order_id:currentOrder.id,p_whatsapp_mitra:phone,p_status_baru:next
+  });
+  if(error)throw new Error('Status tidak tersimpan: '+error.message);
+  const updateResult=typeof updated==='string'?JSON.parse(updated):updated;
+  if(!updateResult?.berhasil)throw new Error(updateResult?.pesan||'Pembaruan status ditolak.');
+  if(file){
+   const {error:evErr}=await db.from('order_evidence').insert({
+    kode_order:currentOrder.kode_order,nama_mitra:name,whatsapp_mitra:phone,
+    tahap:next,catatan:note||null,foto_url:evidenceUrl,storage_path:evidencePath
+   });
+   if(evErr)throw new Error('Status sudah berubah, tetapi pencatatan bukti foto gagal: '+evErr.message+'. Minta admin memeriksa tabel order_evidence.');
+  }
+  const {data:detailAfter,error:detailAfterError}=await db.rpc('detail_order_mitra',{p_order_id:currentOrder.id,p_whatsapp_mitra:phone});
+  if(detailAfterError)throw detailAfterError;
+  const refreshed=typeof detailAfter==='string'?JSON.parse(detailAfter):detailAfter;
+  if(refreshed?.berhasil)renderOrder(refreshed);
+  show('updateMsg','Pembaruan berhasil disimpan. Status terbaru: '+next+(evidenceUrl?'\nDokumentasi foto berhasil diunggah.':''),'success');
+ }catch(e){show('updateMsg',e.message||String(e),'error')}
+ finally{$('updateBtn').disabled=false}
+});
+
+async function enterPortal(session){
+ currentSession=session;
+ const user=session.user;
+ currentMitraPhone=normalizePhone(user.phone||'');
+ if(!user.phone){await db.auth.signOut();throw new Error('Akun ini belum memiliki nomor WhatsApp. Hubungi admin JOS.');}
+ $('loginCard').hidden=true;$('mitraPortal').hidden=false;
+ $('mitraName').value=user.user_metadata?.nama_mitra||user.user_metadata?.full_name||'';
+ $('mitraName').readOnly=!!$('mitraName').value;
+ await loadAvailable();
+}
+$('loginForm').addEventListener('submit',async(e)=>{
+ e.preventDefault();$('loginBtn').disabled=true;showLogin('Memeriksa akun mitra…','');
+ try{
+  const phone=normalizePhone($('loginPhone').value);
+  const password=$('loginPassword').value;
+  const {data,error}=await db.auth.signInWithPassword({phone,password});
+  if(error)throw error;
+  await enterPortal(data.session);
+ }catch(err){showLogin('Login gagal: '+(err.message||err));}
+ finally{$('loginBtn').disabled=false;}
+});
+$('logoutBtn').addEventListener('click',async()=>{
+ await db.auth.signOut();currentSession=null;currentMitraPhone='';currentOrder=null;isCoordinator=false;
+ $('mitraPortal').hidden=true;$('loginCard').hidden=false;$('loginPassword').value='';$('loginPhone').value='';$('loginMsg').hidden=true;$('orderCard').hidden=true;$('progressCard').hidden=true;$('availableOrders').innerHTML='';
+});
+(async()=>{
+ try{
+  const {data,error}=await db.auth.getSession();if(error)throw error;
+  if(data.session)await enterPortal(data.session);
+ }catch(err){showLogin('Sesi tidak dapat dibuka: '+(err.message||err));}
+})();
+</script>
+</body>
+</html>
