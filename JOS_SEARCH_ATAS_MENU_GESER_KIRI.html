@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0878d1">
+<title>JOS — Jasa Orang Suruhan</title>
+<style>
+:root{--blue:#0878d1;--blue2:#0756a4;--ink:#17283b;--muted:#738398;--bg:#f4f7fb;--white:#fff;--line:#e8eef5;--orange:#ff8b35;--shadow:0 10px 28px rgba(20,65,110,.10)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink)}
+button,input{font:inherit}button{cursor:pointer}.app{max-width:520px;min-height:100vh;margin:auto;background:#f8faff;position:relative;padding-bottom:88px;box-shadow:0 0 40px #173b6012}
+.top{padding:18px 18px 14px;background:linear-gradient(135deg,#0878d1,#0756a4);color:#fff;border-radius:0 0 25px 25px}
+.topline{display:flex;justify-content:space-between;align-items:center}.brand{display:flex;align-items:center;gap:10px}.logo{width:43px;height:43px;border-radius:15px;background:#fff;color:var(--blue);display:grid;place-items:center;font-weight:950;font-size:19px;box-shadow:0 5px 14px #003b7440}.brand strong{font-size:18px;letter-spacing:.3px}.brand small{display:block;font-size:10px;opacity:.85;margin-top:2px;letter-spacing:1px}.avatar{width:38px;height:38px;border-radius:50%;background:#ffffff25;border:1px solid #ffffff55;display:grid;place-items:center;font-size:19px}
+.location{margin-top:18px;font-size:11px;opacity:.8}.place{font-size:14px;font-weight:750;margin-top:3px}.place span{opacity:.8;margin-left:5px}
+.search{margin-top:16px;background:#fff;border-radius:14px;padding:0 13px;height:48px;display:flex;align-items:center;gap:10px;box-shadow:0 7px 18px #003d7b22}.search input{border:0;outline:0;width:100%;color:var(--ink);font-size:13px}.search input::placeholder{color:#9aa8b7}.search .glass{font-size:18px;color:#75869a}
+main{padding:17px 16px 10px}.section-head{display:flex;align-items:center;justify-content:space-between;margin:19px 2px 12px}.section-head h2{font-size:16px;margin:0;font-weight:850}.section-head a{font-size:11px;color:var(--blue);font-weight:750;text-decoration:none}
+.promo{position:relative;overflow:hidden;border-radius:20px;padding:18px 17px;color:#fff;background:linear-gradient(110deg,#0756a4,#0b8fe2);min-height:143px;box-shadow:var(--shadow)}.promo:after{content:"";position:absolute;width:160px;height:160px;border:25px solid #ffffff16;border-radius:50%;right:-40px;top:-40px}.promo:before{content:"";position:absolute;width:90px;height:90px;border-radius:50%;background:#ffffff12;right:75px;bottom:-55px}.promo .tag{display:inline-block;background:#ffffff25;border:1px solid #ffffff40;border-radius:30px;padding:5px 9px;font-size:9px;font-weight:800;letter-spacing:.8px}.promo h2{font-size:21px;line-height:1.15;margin:10px 0 5px;max-width:240px}.promo p{font-size:11px;margin:0;opacity:.9}.promo button{margin-top:12px;border:0;background:#fff;color:#0756a4;border-radius:10px;padding:8px 12px;font-size:10px;font-weight:850}
+.dots{display:flex;justify-content:center;gap:5px;margin:10px 0 3px}.dots i{width:5px;height:5px;border-radius:9px;background:#cbd8e6}.dots i:first-child{width:17px;background:var(--blue)}
+.categories{display:grid;grid-template-columns:repeat(4,1fr);gap:13px 8px}.cat{border:0;background:transparent;padding:0;color:var(--ink);text-align:center}.cat-icon{width:57px;height:57px;margin:auto auto 7px;border-radius:18px;background:#e8f4ff;display:grid;place-items:center;font-size:27px;box-shadow:inset 0 -3px 0 #d4eaff}.cat:nth-child(2n) .cat-icon{background:#fff1e5;box-shadow:inset 0 -3px 0 #ffe0c7}.cat:nth-child(3n) .cat-icon{background:#e9f8f0;box-shadow:inset 0 -3px 0 #d4f0e1}.cat span:last-child{font-size:10px;font-weight:700;display:block;line-height:1.2}.cat.active .cat-icon{outline:2px solid var(--blue);outline-offset:2px}
+.trust{display:flex;gap:8px;margin:18px 0 4px}.trust div{flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 8px;display:flex;align-items:center;gap:7px}.trust b{font-size:10px;display:block}.trust small{font-size:8px;color:var(--muted);display:block;margin-top:2px}.trust .ti{font-size:19px}
+.cards{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 11px)/2);grid-template-rows:auto;gap:11px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:2px 1px 12px;margin-right:-2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.cards::-webkit-scrollbar{display:none}
+.cards .service{scroll-snap-align:start;min-width:0}
+.cards.expanded{display:grid;grid-auto-flow:row;grid-auto-columns:unset;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;overflow:visible;scroll-snap-type:none;gap:13px;padding:2px 0 12px;margin-right:0}
+.cards.expanded .service{display:block;min-height:0}
+.cards.expanded .service-art{width:auto;min-width:0;height:112px;min-height:0;font-size:54px}
+.cards.expanded .service-info{display:block;padding:11px}
+.cards.expanded .service-info h3{font-size:12px}
+.cards.expanded .service-info p{font-size:9px;min-height:36px}
+.cards.expanded .price{font-size:10px}
+.cards.expanded .add{width:30px;height:30px}
+.service{display:flex;align-items:stretch;min-height:124px}.cards.expanded .service-art{width:36%;min-width:112px;height:auto;min-height:124px;font-size:48px}.cards.expanded .service-info{flex:1;display:flex;flex-direction:column;justify-content:center;padding:14px}.cards.expanded .service-info h3{font-size:14px}.cards.expanded .service-info p{font-size:11px;min-height:0}.cards.expanded .price{font-size:11px}.cards.expanded .add{width:34px;height:34px}.service{background:#fff;border:1px solid var(--line);border-radius:17px;overflow:hidden;box-shadow:0 5px 15px #173b6009;min-width:0}.service-art{height:112px;display:grid;place-items:center;position:relative;background:linear-gradient(135deg,#e6f4ff,#f5faff);font-size:54px}.service:nth-child(3n+2) .service-art{background:linear-gradient(135deg,#fff0e3,#fff9f2)}.service:nth-child(3n) .service-art{background:linear-gradient(135deg,#e8f8ef,#f6fff9)}.service-art small{position:absolute;top:9px;left:9px;background:#fff;border-radius:20px;padding:5px 7px;font-size:8px;color:#0a7a45;font-weight:800;box-shadow:0 2px 7px #1232}.service-info{padding:11px}.service-info h3{font-size:12px;margin:0 0 5px}.service-info p{font-size:9px;color:var(--muted);margin:0;min-height:24px;line-height:1.35}.service-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:10px}.price{font-size:10px;font-weight:800;color:var(--blue)}.add{width:28px;height:28px;border:0;border-radius:9px;background:var(--blue);color:#fff;font-size:19px;line-height:1;box-shadow:0 4px 9px #0878d133}
+.empty{display:none;text-align:center;color:var(--muted);padding:28px;font-size:12px}.bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);height:72px;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;padding:7px 10px calc(7px + env(safe-area-inset-bottom));z-index:5}.nav{border:0;background:transparent;color:#8b9bad;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9px;font-weight:700;min-width:54px}.nav span:first-child{font-size:20px}.nav.active{color:var(--blue)}.nav.active span:first-child{filter:drop-shadow(0 3px 3px #0878d144)}
+.overlay{position:fixed;inset:0;background:#10263e80;z-index:10;display:none;align-items:flex-end;justify-content:center}.overlay.show{display:flex}.sheet{width:min(520px,100%);background:#fff;border-radius:23px 23px 0 0;padding:19px 18px 25px;max-height:88vh;overflow:auto;box-shadow:0 -10px 35px #092b4a25}.sheet-head{display:flex;justify-content:space-between;align-items:center}.sheet h2{font-size:18px;margin:0}.close{border:0;background:#f0f4f8;border-radius:50%;width:31px;height:31px;font-size:18px}.detail-emoji{height:105px;border-radius:16px;background:#edf6ff;display:grid;place-items:center;font-size:55px;margin:15px 0}.sheet p{font-size:12px;color:var(--muted);line-height:1.5}.field{display:block;font-size:11px;font-weight:750;margin:13px 0 6px}.sheet input,.sheet textarea,.sheet select{width:100%;border:1px solid #dfe7ef;border-radius:11px;padding:12px;font-size:12px;outline-color:var(--blue);background:#fff}.sheet textarea{min-height:70px;resize:vertical}.primary{width:100%;border:0;border-radius:12px;background:var(--blue);color:#fff;padding:14px;font-weight:850;font-size:12px;margin-top:15px;box-shadow:0 6px 14px #0878d133}.toast{position:fixed;z-index:20;bottom:85px;left:50%;transform:translateX(-50%);background:#17324e;color:white;padding:10px 15px;border-radius:30px;font-size:11px;display:none;white-space:nowrap}.toast.show{display:block}
+@media(min-width:521px){body{padding:20px 0}.app{border-radius:25px;overflow:hidden;min-height:calc(100vh - 40px)}.bottom{bottom:20px;border-radius:0 0 25px 25px}}
+
+.service-detail-box{background:#f0f8ff;border:1px solid #cfe7fa;border-radius:12px;padding:12px;margin:10px 0;font-size:11px;line-height:1.55;color:#315c80;white-space:normal}.service-detail-box strong{color:#0756a4}.service-info p{min-height:36px}
+
+
+/* Perbaikan interaksi banner, pencarian, dan pilihan layanan */
+.search-action{border:0;background:transparent;color:#75869a;font-size:21px;padding:5px;line-height:1;flex:0 0 auto}
+.search-action:active{transform:scale(.92)}
+.search input::-webkit-search-cancel-button{display:none}
+.promo{padding:0;touch-action:pan-y}
+.promo-track{display:flex;width:100%;height:100%;transition:transform .38s ease;will-change:transform}
+.promo-slide{flex:0 0 100%;min-width:100%;padding:18px 17px;position:relative;z-index:1}
+.promo-slide h2,.promo-slide p,.promo-slide .tag,.promo-slide button{position:relative;z-index:2}
+.promo-slide h2{max-width:235px}
+.dots button{border:0;padding:0;width:6px;height:6px;border-radius:10px;background:#cbd8e6}
+.dots button.active{width:18px;background:var(--blue)}
+.choice-list{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 5px}
+.choice-chip{border:1px solid #c9dff0;background:#f5faff;color:#0756a4;border-radius:20px;padding:8px 11px;font-size:11px;font-weight:750;line-height:1.25;text-align:left}
+.choice-chip.selected{background:#0878d1;color:#fff;border-color:#0878d1;box-shadow:0 3px 9px #0878d133}
+.choice-hint{font-size:10px;color:#75869a;margin:5px 0}
+@media(max-width:380px){.promo-slide{padding-left:15px;padding-right:15px}.promo-slide h2{font-size:19px;max-width:210px}}
+
+/* Semua layanan: grid 4 kolom tepat di bawah kategori */
+#cards.expanded{
+  width:calc(100% + 20px);
+  margin-left:-10px;
+  margin-right:-10px;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-auto-flow:row;
+  grid-auto-columns:unset;
+  gap:9px 7px;
+  padding:4px 10px 14px;
+  overflow:visible;
+  scroll-snap-type:none;
+}
+#cards.expanded .service{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:flex-start;
+  min-width:0;
+  min-height:0;
+  padding:7px 5px 6px;
+  gap:5px;
+  border-radius:12px;
+  text-align:center;
+}
+#cards.expanded .service-art{
+  flex:0 0 38px;
+  width:38px;
+  min-width:38px;
+  height:38px;
+  min-height:38px;
+  margin:0 auto;
+  border-radius:12px;
+  font-size:22px;
+}
+#cards.expanded .service-art small{display:none}
+#cards.expanded .service-info{
+  min-width:0;
+  width:100%;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:0;
+  gap:3px;
+}
+#cards.expanded .service-info h3{
+  font-size:9px;
+  line-height:1.2;
+  margin:0;
+  overflow-wrap:anywhere;
+}
+#cards.expanded .service-info p{display:none}
+#cards.expanded .service-bottom{margin-top:3px;gap:3px;justify-content:center}
+#cards.expanded .price{font-size:8px;line-height:1.15}
+#cards.expanded .add{width:21px;height:21px;flex:0 0 21px;font-size:14px;border-radius:7px}
+
+/* Mode semua layanan: langsung fokus ke katalog, tanpa label/tautan pengantar. */
+body.all-services-mode #services{display:none!important}
+body.all-services-mode .section-head a{display:none!important}
+
+/* Header pencarian ringkas di posisi paling atas + menu geser dari kiri. */
+.top{padding:10px 14px 14px}
+.search-row{display:flex;align-items:center;gap:8px;width:100%;margin:0 0 12px}
+.search-row .search{flex:1;min-width:0;margin:0;height:39px;padding:0 9px;border-radius:12px;gap:7px;box-shadow:0 4px 12px #003d7b20}
+.search-row .search input{font-size:12px;min-width:0}
+.search-row .search-action{font-size:19px;padding:3px}
+.hamburger{width:39px;height:39px;flex:0 0 39px;border:1px solid #ffffff55;border-radius:12px;background:#ffffff20;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;padding:0}
+.hamburger span{display:block;width:18px;height:2px;border-radius:3px;background:#fff}
+.topline{margin-top:0}
+.location{margin-top:12px}
+.menu-backdrop{position:fixed;inset:0;background:#10263e80;z-index:100;opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
+.menu-backdrop.open{opacity:1;visibility:visible}
+.main-drawer{position:fixed;z-index:101;top:0;bottom:0;left:0;width:min(78vw,310px);background:#fff;box-shadow:12px 0 35px #092b4a30;transform:translateX(-105%);transition:transform .28s ease;display:flex;flex-direction:column;padding:18px 14px calc(18px + env(safe-area-inset-bottom));}
+.main-drawer.open{transform:translateX(0)}
+.drawer-head{display:flex;align-items:center;gap:10px;padding:5px 2px 18px;border-bottom:1px solid var(--line)}
+.drawer-logo{width:42px;height:42px;border-radius:13px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:950;font-size:16px;flex:0 0 auto}
+.drawer-head strong{display:block;font-size:14px;color:var(--ink)}
+.drawer-head small{display:block;font-size:9px;color:var(--muted);margin-top:3px}
+.drawer-head button{margin-left:auto;border:0;border-radius:10px;background:#eff5fa;color:#31516b;width:32px;height:32px;font-size:22px;line-height:1}
+.drawer-links{display:flex;flex-direction:column;align-items:stretch;gap:5px;padding-top:14px}
+.drawer-links button{display:flex;align-items:center;gap:13px;width:100%;min-height:45px;border:0;border-radius:11px;background:transparent;color:#243b52;text-align:left;padding:9px 12px;font-size:12px;font-weight:750}
+.drawer-links button:active{background:#eaf5ff;color:var(--blue)}
+.drawer-links button span{width:24px;text-align:center;font-size:19px;color:var(--blue);flex:0 0 24px}
+.drawer-divider{height:1px;background:var(--line);margin:8px 3px}
+.drawer-footer{margin-top:auto;padding:13px 5px 2px;border-top:1px solid var(--line);font-size:10px;color:#71859a;text-align:center}
+@media(max-width:380px){.top{padding-left:12px;padding-right:12px}.search-row{gap:7px}.search-row .search{height:37px}.hamburger{width:37px;height:37px;flex-basis:37px}}
+</style>
+
+<style id="jos-db-portals">
+.portal-layer{display:none;position:fixed;inset:0;z-index:10050;background:#f4f8fb;overflow:auto;padding:18px 12px 100px}.portal-layer.open{display:block}.portal-wrap{max-width:760px;margin:0 auto}.portal-top{display:flex;align-items:center;gap:12px;margin:4px 0 18px}.portal-back{border:0;border-radius:12px;padding:10px 14px;background:#e7f2fa;color:#07569a;font-weight:800}.portal-card{background:#fff;border:1px solid #d7e6f1;border-radius:18px;padding:17px;margin:12px 0;box-shadow:0 5px 18px #123b7610}.portal-card h2,.portal-card h3{margin:0 0 8px;color:#07569a}.portal-card p{color:#617789;font-size:13px;line-height:1.5}.portal-card label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}.portal-card input,.portal-card textarea,.portal-card select{width:100%;padding:12px;border:1px solid #cbdce9;border-radius:11px;font:inherit;background:#fff}.portal-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0}.portal-actions button,.portal-submit{border:0;border-radius:12px;padding:12px;background:#087bd5;color:#fff;font-weight:800}.portal-actions button.active{background:#064c9a}.portal-submit{width:100%;margin-top:14px}.portal-msg{font-size:13px;padding:10px;border-radius:10px;background:#eef7ff;color:#07569a;margin-top:10px;white-space:pre-wrap}.portal-list{display:grid;gap:10px}.portal-item{border:1px solid #d8e7f2;border-radius:13px;padding:12px;background:#fff}.portal-item strong{color:#064c9a}.portal-item small{display:block;color:#64798a;margin-top:4px;line-height:1.45}.portal-item button{margin:8px 6px 0 0;border:0;border-radius:9px;padding:9px 11px;background:#087bd5;color:white;font-weight:700}.portal-item button.reject{background:#a63a3a}.portal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hidden{display:none!important}
+@media(max-width:480px){.portal-grid{grid-template-columns:1fr}.portal-actions{grid-template-columns:1fr 1fr}}
+</style>
+
+
+<style id="jos-all-services-match-category-style">
+/* Saat Lihat Semua: setiap layanan memakai tampilan ikon + nama yang sama seperti tombol Kategori Layanan. */
+#cards.expanded .service{
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  min-width:0;min-height:0;height:auto;padding:0;margin:0;gap:0;
+  border:0;border-radius:0;background:transparent;box-shadow:none;
+  overflow:visible;text-align:center;cursor:pointer;
+}
+#cards.expanded .service-art{
+  display:grid;place-items:center;position:relative;
+  flex:0 0 57px;width:57px;min-width:57px;height:57px;min-height:57px;
+  margin:0 auto 7px;padding:0;border:0;border-radius:18px;
+  background:#e8f4ff;font-size:27px;line-height:1;
+  box-shadow:inset 0 -3px 0 #d4eaff;
+}
+#cards.expanded .service:nth-child(2n) .service-art{background:#fff1e5;box-shadow:inset 0 -3px 0 #ffe0c7}
+#cards.expanded .service:nth-child(3n) .service-art{background:#e9f8f0;box-shadow:inset 0 -3px 0 #d4f0e1}
+#cards.expanded .service-art small{display:none}
+#cards.expanded .service-info{
+  display:block;flex:0 0 auto;width:100%;min-width:0;padding:0;margin:0;
+}
+#cards.expanded .service-info h3{
+  display:block;margin:0;padding:0;color:var(--ink);font-size:10px;
+  font-weight:700;line-height:1.2;text-align:center;overflow-wrap:anywhere;
+}
+#cards.expanded .service-info p,#cards.expanded .service-bottom{display:none}
+#cards.expanded .service:active .service-art{outline:2px solid var(--blue);outline-offset:2px}
+</style>
+
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="search-row">
+    <div class="search" id="searchBox" role="search">
+      <button type="button" class="search-action" id="searchFocus" aria-label="Aktifkan pencarian">⌕</button>
+      <input id="search" type="search" placeholder="Cari jasa yang kamu butuhkan..." autocomplete="off" aria-label="Cari layanan">
+      <button type="button" class="search-action search-clear" id="searchClear" aria-label="Hapus pencarian">×</button>
+    </div>
+    <button type="button" class="hamburger" id="openMainMenu" aria-label="Buka menu"><span></span><span></span><span></span></button>
+  </div>
+  <div class="topline">
+    <div class="brand"><div class="logo">JOS</div><div><strong>Jasa Orang Suruhan</strong><small>BERSAMA JOS, SEMUA PASTI BERES!</small></div></div>
+    <div class="avatar" aria-label="Akun">👤</div>
+  </div>
+  <div class="location">LOKASI LAYANAN</div>
+  <div class="place">Jabodetabek <span>⌄</span></div>
+</header>
+<main>
+  <section class="promo" id="promoSlider" aria-label="Banner promosi JOS">
+    <div class="promo-track" id="promoTrack">
+      <div class="promo-slide">
+        <span class="tag">SOLUSI SEMUA KEBUTUHAN ANDA</span>
+        <h2>Butuh bantuan? Panggil JOS aja!</h2>
+        <p>Pilih layanan, pesan dengan mudah, biar mitra JOS yang bantu.</p>
+        <button onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})">PESAN SEKARANG →</button>
+      </div>
+      <div class="promo-slide">
+        <span class="tag">JANGKAUAN LAYANAN</span>
+        <h2>Layanan JOS area Jabodetabek</h2>
+        <p>Temukan bantuan untuk kebutuhan rumah, kantor, dan aktivitas Anda.</p>
+        <button onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})">PILIH LAYANAN →</button>
+      </div>
+      <div class="promo-slide">
+        <span class="tag">MITRA JOS SIAP MEMBANTU</span>
+        <h2>Satu aplikasi, banyak solusi</h2>
+        <p>Pilih jenis pekerjaan dan detail kebutuhan secara langsung.</p>
+        <button onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})">LIHAT LAYANAN →</button>
+      </div>
+    </div>
+  </section>
+  <div class="dots" id="promoDots" aria-label="Pilih banner">
+    <button type="button" aria-label="Banner 1" class="active"></button>
+    <button type="button" aria-label="Banner 2"></button>
+    <button type="button" aria-label="Banner 3"></button>
+  </div>
+  <div class="section-head"><h2>Kategori layanan</h2><a href="#services" onclick="showAll()">Lihat semua</a></div>
+  <section class="categories" id="categories">
+<button class="cat" data-filter="Pindahan"><span class="cat-icon">🚚</span><span>Pindahan</span></button>
+<button class="cat" data-filter="Cleaning"><span class="cat-icon">🧹</span><span>Cleaning</span></button>
+<button class="cat" data-filter="Toren"><span class="cat-icon">🚿</span><span>Toren</span></button>
+<button class="cat" data-filter="Taman"><span class="cat-icon">🌳</span><span>Taman</span></button>
+<button class="cat" data-filter="Furniture"><span class="cat-icon">🛠️</span><span>Furniture</span></button>
+<button class="cat" data-filter="Supir"><span class="cat-icon">🚘</span><span>Supir</span></button>
+<button class="cat" data-filter="TKBM"><span class="cat-icon">📦</span><span>TKBM</span></button>
+<button class="cat" data-filter="Lainnya"><span class="cat-icon">＋</span><span>Lainnya</span></button>
+  </section>
+  <div class="section-head" id="services"><h2>Rekomendasi untukmu</h2><a href="#" onclick="showAll();return false">Lihat semua</a></div>
+  <section class="cards" id="cards">
+<article class="service" data-name="Pindahan &amp; Angkut Barang" data-category="Pindahan &amp; Angkut Barang" data-emoji="🚚" data-desc="Pindahan kos, rumah, kantor; angkut barang dan pilihan jumlah mitra." data-detail="Kos/kosan — Rp125.000 per mitra (promo); Rumah — Rp200.000 per mitra; Kantor — Rp250.000 per mitra; tambahan mobil/transportasi dikonfirmasi admin; packing tambahan dihitung per mitra."><div class="service-art">🚚</div><div class="service-info"><h3>Pindahan &amp; Angkut Barang</h3><p>Pindahan kos, rumah, kantor; angkut barang dan pilihan jumlah mitra.</p><div class="service-bottom"><span class="price">Mulai Rp125.000</span><button class="add" aria-label="Lihat detail Pindahan &amp; Angkut Barang">+</button></div></div></article>
+<article class="service" data-name="Bongkar Muat / TKBM" data-category="Bongkar Muat / TKBM" data-emoji="📦" data-desc="Tenaga kerja bongkar, muat, dan angkut barang." data-detail="Hanya muat/bongkar sedikit — Rp150.000/orang; sedang — Rp200.000/orang; banyak — Rp250.000/orang; Muat &amp; bongkar sedikit — Rp200.000/orang; sedang — Rp250.000/orang; banyak — Rp350.000/orang. Admin 20% ditambahkan."><div class="service-art">📦</div><div class="service-info"><h3>Bongkar Muat / TKBM</h3><p>Tenaga kerja bongkar, muat, dan angkut barang.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Bongkar Muat / TKBM">+</button></div></div></article>
+<article class="service" data-name="Cleaning Service" data-category="Cleaning Service" data-emoji="🧹" data-desc="Pembersihan rumah, kamar, kantor, dan area lainnya." data-detail="Pilih jumlah mitra 1–10 orang dan jelaskan luas/kondisi area. Tarif dasar mengikuti tingkat pekerjaan; harga akhir dikonfirmasi admin. Admin 20%."><div class="service-art">🧹</div><div class="service-info"><h3>Cleaning Service</h3><p>Pembersihan rumah, kamar, kantor, dan area lainnya.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Cleaning Service">+</button></div></div></article>
+<article class="service" data-name="Potong Rumput" data-category="Potong Rumput" data-emoji="🌿" data-desc="Potong rumput dan merapikan halaman atau kebun." data-detail="Pilih ukuran/luas area dan kondisi rumput; harga dikonfirmasi admin berdasarkan lokasi dan kebutuhan."><div class="service-art">🌿</div><div class="service-info"><h3>Potong Rumput</h3><p>Potong rumput dan merapikan halaman atau kebun.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Potong Rumput">+</button></div></div></article>
+<article class="service" data-name="Pertukangan" data-category="Pertukangan" data-emoji="🔨" data-desc="Perbaikan ringan, pemasangan, dan pekerjaan pertukangan rumah." data-detail="Perbaikan ringan — Rp120.000; pemasangan rak/gantungan — Rp120.000; perbaikan engsel pintu — Rp120.000; perbaikan pintu/jendela — Rp180.000; pemasangan perlengkapan rumah — Rp180.000. Material belum termasuk; admin konfirmasi pekerjaan khusus."><div class="service-art">🔨</div><div class="service-info"><h3>Pertukangan</h3><p>Perbaikan ringan, pemasangan, dan pekerjaan pertukangan rumah.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Pertukangan">+</button></div></div></article>
+<article class="service" data-name="Kusen, Jendela &amp; Aluminium" data-category="Kusen, Jendela &amp; Aluminium" data-emoji="🪟" data-desc="Pemasangan atau perbaikan kusen, pintu, jendela, dan kitchen set aluminium." data-detail="Pemasangan kusen; pemasangan pintu; pemasangan jendela; kitchen set aluminium; pekerjaan aluminium lainnya. Harga berdasarkan ukuran, material, dan kebutuhan; konfirmasi admin."><div class="service-art">🪟</div><div class="service-info"><h3>Kusen, Jendela &amp; Aluminium</h3><p>Pemasangan atau perbaikan kusen, pintu, jendela, dan kitchen set aluminium.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Kusen, Jendela &amp; Aluminium">+</button></div></div></article>
+<article class="service" data-name="Cuci Toren Air" data-category="Cuci Toren Air" data-emoji="🚿" data-desc="Pembersihan toren berdasarkan kapasitas dan jumlah toren." data-detail="300 L — Rp125.000; 510–650 L — Rp150.000; 700–1.100 L — Rp200.000; 1.150–1.600 L — Rp250.000; 1.650–2.200 L — Rp300.000; 2.250–3.300 L — Rp350.000; 3.350–4.300 L — Rp400.000; 4.350–5.300 L — Rp450.000. Per toren, admin 20%."><div class="service-art">🚿</div><div class="service-info"><h3>Cuci Toren Air</h3><p>Pembersihan toren berdasarkan kapasitas dan jumlah toren.</p><div class="service-bottom"><span class="price">Mulai Rp125.000</span><button class="add" aria-label="Lihat detail Cuci Toren Air">+</button></div></div></article>
+<article class="service" data-name="Pijat Relaksasi" data-category="Pijat Relaksasi" data-emoji="💆" data-desc="Layanan pijat dengan pilihan durasi." data-detail="60 menit — Rp125.000; 90 menit — Rp175.000; 120 menit — Rp225.000; tambahan durasi Rp50.000 setiap 30 menit. Admin 20%."><div class="service-art">💆</div><div class="service-info"><h3>Pijat Relaksasi</h3><p>Layanan pijat dengan pilihan durasi.</p><div class="service-bottom"><span class="price">Mulai Rp125.000</span><button class="add" aria-label="Lihat detail Pijat Relaksasi">+</button></div></div></article>
+<article class="service" data-name="Jasa Supir" data-category="Jasa Supir" data-emoji="🚘" data-desc="Supir harian, antar-jemput, perjalanan dalam atau luar kota." data-detail="Pilih kebutuhan harian/antar-jemput/luar kota dan durasi. Overtime Rp25.000/jam (harga sudah termasuk admin sesuai ketentuan layanan). Detail perjalanan dikonfirmasi admin."><div class="service-art">🚘</div><div class="service-info"><h3>Jasa Supir</h3><p>Supir harian, antar-jemput, perjalanan dalam atau luar kota.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Jasa Supir">+</button></div></div></article>
+<article class="service" data-name="Instalasi Listrik" data-category="Instalasi Listrik" data-emoji="⚡" data-desc="Pemasangan dan perbaikan instalasi listrik rumah atau kantor." data-detail="Pekerjaan instalasi/perbaikan listrik; estimasi mulai Rp200.000 + admin. Material dan tingkat pekerjaan dikonfirmasi admin."><div class="service-art">⚡</div><div class="service-info"><h3>Instalasi Listrik</h3><p>Pemasangan dan perbaikan instalasi listrik rumah atau kantor.</p><div class="service-bottom"><span class="price">Mulai Rp200.000</span><button class="add" aria-label="Lihat detail Instalasi Listrik">+</button></div></div></article>
+<article class="service" data-name="Taman &amp; Landscaping" data-category="Taman &amp; Landscaping" data-emoji="🌳" data-desc="Penataan dan perawatan taman rumah, kantor, dan area luar." data-detail="Perawatan taman, penataan/landscaping, pemangkasan dan pekerjaan taman lainnya. Harga berdasarkan luas dan kondisi area; konfirmasi admin."><div class="service-art">🌳</div><div class="service-info"><h3>Taman &amp; Landscaping</h3><p>Penataan dan perawatan taman rumah, kantor, dan area luar.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Taman &amp; Landscaping">+</button></div></div></article>
+<article class="service" data-name="Service Elektronik" data-category="Service Elektronik" data-emoji="🔌" data-desc="Perbaikan perangkat elektronik rumah tangga dan perangkat digital." data-detail="Service AC; cuci AC; service HP; TV; mesin cuci; kipas angin; komputer; laptop; perangkat lainnya. Harga setelah pemeriksaan kerusakan dan kebutuhan suku cadang; admin 20%."><div class="service-art">🔌</div><div class="service-info"><h3>Service Elektronik</h3><p>Perbaikan perangkat elektronik rumah tangga dan perangkat digital.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Service Elektronik">+</button></div></div></article>
+<article class="service" data-name="Pengecatan" data-category="Pengecatan" data-emoji="🖌️" data-desc="Pengecatan rumah, kantor, dan bangunan." data-detail="Pilih area/objek, luas, kondisi permukaan, dan jenis cat. Harga dan material dikonfirmasi admin."><div class="service-art">🖌️</div><div class="service-info"><h3>Pengecatan</h3><p>Pengecatan rumah, kantor, dan bangunan.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Pengecatan">+</button></div></div></article>
+<article class="service" data-name="Perbaikan Perabot" data-category="Perbaikan Perabot" data-emoji="🛠️" data-desc="Perbaikan meja, kursi, lemari, dan perabot rumah lainnya." data-detail="Pilih jenis perabot dan kerusakan; harga berdasarkan tingkat perbaikan dan material, dikonfirmasi admin."><div class="service-art">🛠️</div><div class="service-info"><h3>Perbaikan Perabot</h3><p>Perbaikan meja, kursi, lemari, dan perabot rumah lainnya.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Perbaikan Perabot">+</button></div></div></article>
+<article class="service" data-name="Jasa Packing" data-category="Jasa Packing" data-emoji="📦" data-desc="Packing barang pindahan dan kebutuhan lainnya." data-detail="Sedikit/sedang/banyak; kebutuhan packing tambahan dihitung per mitra. Material packing dapat dikonfirmasi admin."><div class="service-art">📦</div><div class="service-info"><h3>Jasa Packing</h3><p>Packing barang pindahan dan kebutuhan lainnya.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Jasa Packing">+</button></div></div></article>
+<article class="service" data-name="Jasa Antar Jemput" data-category="Jasa Antar Jemput" data-emoji="🚗" data-desc="Antar-jemput orang, barang, atau dokumen." data-detail="Isi titik jemput, tujuan, waktu, dan jenis barang/orang. Biaya berdasarkan jarak dan kebutuhan; konfirmasi admin."><div class="service-art">🚗</div><div class="service-info"><h3>Jasa Antar Jemput</h3><p>Antar-jemput orang, barang, atau dokumen.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Jasa Antar Jemput">+</button></div></div></article>
+<article class="service" data-name="Jasa Belanja" data-category="Jasa Belanja" data-emoji="🛒" data-desc="Bantuan belanja kebutuhan harian atau kebutuhan lainnya." data-detail="Isi daftar belanja, toko/lokasi, dan alamat pengantaran. Biaya jasa dan ongkos belanja dikonfirmasi admin."><div class="service-art">🛒</div><div class="service-info"><h3>Jasa Belanja</h3><p>Bantuan belanja kebutuhan harian atau kebutuhan lainnya.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Jasa Belanja">+</button></div></div></article>
+<article class="service" data-name="Jasa Antri" data-category="Jasa Antri" data-emoji="🧍" data-desc="Bantuan antre di bank, kantor, rumah sakit, dan tempat layanan lainnya." data-detail="Isi lokasi, jenis antrean, estimasi durasi, dan dokumen yang diperlukan. Harga dikonfirmasi admin."><div class="service-art">🧍</div><div class="service-info"><h3>Jasa Antri</h3><p>Bantuan antre di bank, kantor, rumah sakit, dan tempat layanan lainnya.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Jasa Antri">+</button></div></div></article>
+
+<article class="service" data-name="Jasa Menguburkan Hewan Peliharaan" data-category="Jasa Menguburkan Hewan Peliharaan" data-emoji="🐾" data-desc="Bantuan penguburan hewan peliharaan secara layak." data-detail="Isi jenis/ukuran hewan dan lokasi. Detail serta harga dikonfirmasi admin."><div class="service-art">🐾</div><div class="service-info"><h3>Jasa Menguburkan Hewan Peliharaan</h3><p>Bantuan penguburan hewan peliharaan secara layak.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Jasa Menguburkan Hewan Peliharaan">+</button></div></div></article>
+<article class="service" data-name="Jasa Ari-Ari / Bali Pasca Lahiran" data-category="Jasa Ari-Ari / Bali Pasca Lahiran" data-emoji="🌼" data-desc="Bantuan pengurusan ari-ari/bali pasca persalinan." data-detail="Jelaskan lokasi dan kebutuhan yang diperlukan. Detail serta harga dikonfirmasi admin."><div class="service-art">🌼</div><div class="service-info"><h3>Jasa Ari-Ari / Bali Pasca Lahiran</h3><p>Bantuan pengurusan ari-ari/bali pasca persalinan.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Jasa Ari-Ari / Bali Pasca Lahiran">+</button></div></div></article>
+<article class="service" data-name="Pencarian &amp; Pembuangan Bangkai Tikus" data-category="Pencarian &amp; Pembuangan Bangkai Tikus" data-emoji="🧤" data-desc="Bantuan mencari dan membuang bangkai tikus." data-detail="Jelaskan lokasi/area dan kondisi. Detail serta harga dikonfirmasi admin."><div class="service-art">🧤</div><div class="service-info"><h3>Pencarian &amp; Pembuangan Bangkai Tikus</h3><p>Bantuan mencari dan membuang bangkai tikus.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Pencarian &amp; Pembuangan Bangkai Tikus">+</button></div></div></article>
+  <article class="service" data-name="Jasa Umum / Lainnya" data-category="Jasa Umum / Lainnya" data-emoji="🧰" data-desc="Bantuan berbagai kebutuhan rumah tangga dan pekerjaan umum." data-detail="Jelaskan kebutuhan, lokasi, waktu, dan jumlah mitra. Harga dikonfirmasi admin."><div class="service-art">🧰</div><div class="service-info"><h3>Jasa Umum / Lainnya</h3><p>Bantuan berbagai kebutuhan rumah tangga dan pekerjaan umum.</p><div class="service-bottom"><span class="price">Lihat detail</span><button class="add" aria-label="Lihat detail Jasa Umum / Lainnya">+</button></div></div></article>
+  </section>
+  <div class="empty" id="empty">Layanan tidak ditemukan. Coba kata kunci lain.</div>
+  <section class="trust">
+    <div><span class="ti">🛡️</span><span><b>Mitra pilihan</b><small>Layanan terpercaya</small></span></div>
+    <div><span class="ti">⚡</span><span><b>Pesan praktis</b><small>Proses lebih mudah</small></span></div>
+    <div><span class="ti">💬</span><span><b>Bantuan admin</b><small>Siap membantu</small></span></div>
+  </section>
+</main>
+<nav class="bottom">
+  <button class="nav active" data-nav="Beranda"><span>⌂</span>Beranda</button>
+  <button class="nav" data-nav="Layanan" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})"><span>▦</span>Layanan</button>
+  <button class="nav" data-nav="Pesanan" onclick="openJosPortal('orders')"><span>▤</span>Pesanan</button>
+  <button class="nav" data-nav="Akun" onclick="openJosPortal('customer')"><span>☺</span>Akun</button>
+</nav>
+</div>
+<div class="menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
+<aside class="main-drawer" id="mainDrawer" aria-label="Menu utama" aria-hidden="true">
+  <div class="drawer-head"><div class="drawer-logo">JOS</div><div><strong>Menu JOS</strong><small>Solusi Semua Kebutuhan Anda</small></div><button type="button" id="closeMainMenu" aria-label="Tutup menu">×</button></div>
+  <nav class="drawer-links">
+    <button type="button" data-drawer="home"><span>⌂</span>Beranda</button>
+    <button type="button" data-drawer="services"><span>▦</span>Layanan</button>
+    <button type="button" data-drawer="orders"><span>▤</span>Pesanan</button>
+    <button type="button" data-drawer="account"><span>☺</span>Akun Pelanggan</button>
+    <div class="drawer-divider"></div>
+    <button type="button" data-drawer="mitra"><span>👷</span>Portal Mitra</button>
+    <button type="button" data-drawer="admin"><span>⚙</span>Portal Admin</button>
+  </nav>
+  <div class="drawer-footer">Bersama JOS, semua pasti beres!</div>
+</aside>
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeSheet()">
+ <div class="sheet">
+  <div class="sheet-head"><h2 id="sheetTitle">Pesan layanan</h2><button class="close" onclick="closeSheet()">×</button></div>
+  <div class="detail-emoji" id="sheetEmoji">🚚</div>
+  <p id="sheetDesc"></p>
+  <div class="service-detail-box" id="sheetDetail"><strong>Detail layanan & pilihan:</strong></div>
+  <div class="choice-list" id="serviceChoices" aria-label="Pilihan detail layanan"></div>
+  <label class="field" for="customerName">Nama pemesan</label><input id="customerName" placeholder="Masukkan nama">
+  <label class="field" for="customerPhone">Nomor WhatsApp</label><input id="customerPhone" inputmode="tel" placeholder="08xxxxxxxxxx">
+  <label class="field" for="serviceAddress">Alamat layanan</label><input id="serviceAddress" placeholder="Alamat lengkap lokasi pekerjaan">
+  <label class="field" for="serviceDetail">Pilihan paket / detail layanan</label><textarea id="serviceDetail" placeholder="Pilih/isi paket, ukuran, jumlah mitra, durasi, atau jenis pekerjaan..."></textarea>
+  <button class="primary" onclick="sendOrder()">LANJUT PESAN VIA WHATSAPP</button>
+ </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<section class="portal-layer" id="josPortalCustomer"><div class="portal-wrap">
+ <div class="portal-top"><button class="portal-back" onclick="closeJosPortals()">← Kembali</button><h2>👤 Akun JOS</h2></div>
+ <div class="portal-card" id="josCustomerAuthBox"><h3 id="josCustomerAuthTitle">Login Pelanggan</h3><form id="josCustomerAuthForm"><div id="josCustomerNameWrap" class="hidden"><label>Nama lengkap</label><input id="josCustomerRegName" autocomplete="name"></div><label>Email</label><input id="josCustomerEmail" type="email" autocomplete="email" required><label>Password</label><input id="josCustomerPassword" type="password" minlength="8" required><div id="josCustomerWaWrap" class="hidden"><label>Nomor WhatsApp</label><input id="josCustomerWA" type="tel" placeholder="08xxxxxxxxxx"></div><button class="portal-submit" id="josCustomerAuthSubmit">Login Pelanggan</button></form><p><a href="#" id="josCustomerToggleAuth">Belum punya akun? Daftar pelanggan</a></p><div class="portal-msg" id="josCustomerAuthMsg" role="status"></div></div>
+ <div class="portal-card" id="josOtherPortals"><h3>Portal khusus</h3><p>Masuk melalui halaman terpisah sesuai peran akun.</p><div class="portal-actions"><button type="button" onclick="openJosPortal('mitra')">Portal Mitra</button><button type="button" onclick="openJosPortal('admin')">Portal Admin</button></div></div>
+ <div class="portal-card hidden" id="josMitraAuthBox"><h3 id="josMitraAuthTitle">Login Mitra</h3><form id="josMitraAuthForm"><div id="josMitraNameWrap" class="hidden"><label>Nama lengkap</label><input id="josMitraRegName"></div><label>Email</label><input id="josMitraEmail" type="email" required><label>Password</label><input id="josMitraPassword" type="password" minlength="8" required><button class="portal-submit">Login Mitra</button></form><p><a href="#" id="josMitraToggleAuth">Belum punya akun? Daftar mitra</a></p><div class="portal-msg" id="josMitraAuthMsg" role="status"></div></div>
+ <div class="portal-card hidden" id="josAdminAuthBox"><h3>Login Khusus Admin</h3><form id="josAdminAuthForm"><label>Email admin</label><input id="josAdminEmail" type="email" required><label>Password</label><input id="josAdminPassword" type="password" required><button class="portal-submit">Masuk Portal Admin</button></form><div class="portal-msg" id="josAdminAuthMsg" role="status">Akses admin hanya diberikan kepada akun yang sudah terdaftar sebagai admin di database.</div></div>
+ <div class="portal-card hidden" id="josCustomerProfileBox"><h3>Profil Pelanggan</h3><p id="josCustomerProfileSummary"></p><button class="portal-submit" onclick="josPortalLogout()">Keluar dari akun pelanggan</button></div>
+ <div class="portal-card hidden" id="josMitraProfileBox"><h3>Portal Mitra</h3><p id="josMitraProfileStatus">Lengkapi pendaftaran mitra.</p><form id="josMitraProfileForm"><label>Nama lengkap</label><input id="josMitraFullName" required><label>WhatsApp</label><input id="josMitraFullWA" required><label>Alamat domisili</label><textarea id="josMitraAddress" required></textarea><label>Kota/Kabupaten</label><input id="josMitraCity" required><label>Keahlian layanan</label><input id="josMitraSkills" placeholder="Contoh: Cleaning, Pindahan, TKBM" required><label>Pengalaman</label><textarea id="josMitraExperience"></textarea><button class="portal-submit">Simpan pendaftaran mitra</button></form><div id="josMitraDash" class="hidden"><h3>Orderan tersedia</h3><div id="josMitraAvailable" class="portal-list"></div><h3>Orderan saya</h3><div id="josMitraMine" class="portal-list"></div></div><button class="portal-submit" onclick="josPortalLogout()">Keluar dari akun mitra</button></div>
+ <div class="portal-card hidden" id="josAdminDashboard"><h3>Dashboard Admin JOS</h3><div class="portal-actions"><button onclick="josAdminLoad('orders')">Semua Pesanan</button><button onclick="josAdminLoad('mitra')">Pendaftaran Mitra</button></div><div id="josAdminData" class="portal-list"></div><button class="portal-submit" onclick="josPortalLogout()">Keluar dari admin</button></div>
+</div></section>
+<section class="portal-layer" id="josPortalOrders"><div class="portal-wrap"><div class="portal-top"><button class="portal-back" onclick="closeJosPortals()">← Kembali</button><h2>📦 Pesanan Saya</h2></div><div class="portal-card"><div id="josOrdersPortalMessage" class="portal-msg">Silakan login sebagai pelanggan untuk melihat pesanan.</div><div id="josCustomerOrdersList" class="portal-list"></div><button class="portal-submit" onclick="openJosPortal('customer')">Login / Akun Pelanggan</button></div></div></section>
+
+<script>
+let selectedService=null, toastTimer;
+const cards=[...document.querySelectorAll('.service')];
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2400)}
+let promoIndex=0,promoStartX=0,promoDeltaX=0;
+const promoTrack=document.getElementById('promoTrack'),promoSlider=document.getElementById('promoSlider'),promoDots=[...document.querySelectorAll('#promoDots button')];
+function setPromo(index){
+ const total=promoDots.length;promoIndex=(index+total)%total;
+ promoTrack.style.transform='translateX(-'+(promoIndex*100)+'%)';
+ promoDots.forEach((dot,i)=>dot.classList.toggle('active',i===promoIndex));
+}
+promoDots.forEach((dot,i)=>dot.addEventListener('click',()=>setPromo(i)));
+promoSlider.addEventListener('touchstart',e=>{promoStartX=e.changedTouches[0].clientX;promoDeltaX=0;},{passive:true});
+promoSlider.addEventListener('touchmove',e=>{promoDeltaX=e.changedTouches[0].clientX-promoStartX;},{passive:true});
+promoSlider.addEventListener('touchend',()=>{if(Math.abs(promoDeltaX)>35)setPromo(promoIndex+(promoDeltaX<0?1:-1));promoDeltaX=0;},{passive:true});
+
+function openSheet(card){
+ selectedService=card;
+ document.getElementById('sheetTitle').textContent=card.dataset.name;
+ document.getElementById('sheetEmoji').textContent=card.dataset.emoji;
+ document.getElementById('sheetDesc').textContent=card.dataset.desc;
+ document.getElementById('sheetDetail').innerHTML='<strong>Detail layanan:</strong><br>'+card.dataset.detail.replace(/; /g,'<br>• ');
+ const choices=document.getElementById('serviceChoices');
+ choices.innerHTML='<div class="choice-hint">Pilih satu atau beberapa pilihan di bawah ini:</div>';
+ const options=card.dataset.detail.split(';').map(x=>x.trim()).filter(Boolean);
+ options.forEach((option,index)=>{
+   const chip=document.createElement('button');
+   chip.type='button';chip.className='choice-chip';chip.textContent=option;
+   chip.addEventListener('click',()=>{
+     chip.classList.toggle('selected');
+     const selected=[...choices.querySelectorAll('.choice-chip.selected')].map(b=>b.textContent);
+     document.getElementById('serviceDetail').value=selected.join('; ');
+   });
+   choices.appendChild(chip);
+ });
+ document.getElementById('serviceDetail').value='';
+ document.getElementById('overlay').classList.add('show');
+}
+function closeSheet(){document.getElementById('overlay').classList.remove('show')}
+cards.forEach(card=>card.querySelector('.add').addEventListener('click',()=>openSheet(card)));
+cards.forEach(card=>card.addEventListener('click',e=>{if(!e.target.closest('button'))openSheet(card)}));
+async function sendOrder(){
+ const name=document.getElementById('customerName').value.trim(),phone=document.getElementById('customerPhone').value.trim(),address=document.getElementById('serviceAddress').value.trim(),detail=document.getElementById('serviceDetail').value.trim();
+ if(!name||!phone||!address){toast('Lengkapi nama, WhatsApp, dan alamat dulu.');return}
+ const {data:{user}}=await josDb.auth.getUser();
+ if(!user){toast('Login akun pelanggan dahulu agar pesanan tersimpan di database.');closeSheet();openJosPortal('customer');return;}
+ const code='JOS-'+new Date().toISOString().replace(/\D/g,'').slice(0,14)+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+ const rec={customer_id:user.id,kode_order:code,nama_pelanggan:name,whatsapp_pelanggan:phone.replace(/\s+/g,''),alamat:address,nama_layanan:selectedService.dataset.name,deskripsi:detail,harga_jasa:null,upah_mitra:null,status:'Tersedia',nama_mitra:null,whatsapp_mitra:null,dibuat_pada:new Date().toISOString(),diambil_pada:null};
+ try{const {error}=await josDb.from('orders').insert(rec);if(error)throw error;toast('Pesanan tersimpan di database JOS.');closeSheet();await josLoadCustomerOrders();openJosPortal('orders');}
+ catch(e){toast('Pesanan belum tersimpan: '+(e.message||'Periksa tabel dan izin database'));return;}
+ const msg=`Halo Admin JOS, pesanan saya sudah dibuat di aplikasi.%0A%0AKode: ${code}%0ALayanan: ${encodeURIComponent(rec.nama_layanan)}%0ANama: ${encodeURIComponent(name)}%0AWhatsApp: ${encodeURIComponent(phone)}%0AAlamat: ${encodeURIComponent(address)}%0ADetail: ${encodeURIComponent(detail||'-')}%0A%0ABersama JOS, semua pasti beres!`;
+ window.open('https://wa.me/628577561441?text='+msg,'_blank');
+}
+function filterServices(term){
+ let count=0;
+ const q=(term||'').toLowerCase().trim();
+ const groups={
+  'pindahan':['pindahan & angkut barang'],
+  'cleaning':['cleaning service'],
+  'toren':['cuci toren air'],
+  'taman':['potong rumput','taman & landscaping'],
+  'furniture':['pertukangan','kusen, jendela & aluminium','perbaikan perabot'],
+  'supir':['jasa supir','jasa antar jemput'],
+  'tkbm':['bongkar muat / tkbm'],
+  'lainnya':['jasa packing','jasa antar jemput','jasa belanja','jasa antri','jasa umum / lainnya','jasa lainnya','jasa menguburkan hewan peliharaan','jasa ari-ari / bali pasca lahiran','pencarian & pembuangan bangkai tikus','service elektronik','instalasi listrik','pengecatan','pijat relaksasi','kusen, jendela & aluminium','pertukangan']
+ };
+ cards.forEach(c=>{
+  const name=c.dataset.name.toLowerCase();
+  const text=(c.dataset.name+' '+c.dataset.desc+' '+c.dataset.detail+' '+c.textContent).toLowerCase();
+  const match=!q || (groups[q] ? groups[q].some(n=>name.includes(n)) : text.includes(q));
+  c.style.display=match?'':'none';
+  if(match)count++;
+ });
+ document.getElementById('empty').style.display=count?'none':'block';
+}
+
+// Menu utama: panel muncul dari kiri dengan susunan menu vertikal.
+const mainDrawer=document.getElementById('mainDrawer');
+const menuBackdrop=document.getElementById('menuBackdrop');
+function openMainMenu(){mainDrawer.classList.add('open');menuBackdrop.classList.add('open');mainDrawer.setAttribute('aria-hidden','false');menuBackdrop.setAttribute('aria-hidden','false')}
+function closeMainMenu(){mainDrawer.classList.remove('open');menuBackdrop.classList.remove('open');mainDrawer.setAttribute('aria-hidden','true');menuBackdrop.setAttribute('aria-hidden','true')}
+document.getElementById('openMainMenu').addEventListener('click',openMainMenu);
+document.getElementById('closeMainMenu').addEventListener('click',closeMainMenu);
+menuBackdrop.addEventListener('click',closeMainMenu);
+document.querySelectorAll('[data-drawer]').forEach(btn=>btn.addEventListener('click',()=>{const dest=btn.dataset.drawer;closeMainMenu();if(dest==='home'){window.scrollTo({top:0,behavior:'smooth'});}else if(dest==='services'){document.getElementById('categories').scrollIntoView({behavior:'smooth',block:'start'});}else if(dest==='orders'){openJosPortal('orders');}else if(dest==='account'){openJosPortal('customer');}else if(dest==='mitra'){openJosPortal('mitra');}else if(dest==='admin'){openJosPortal('admin');}}));
+const searchInput=document.getElementById('search');
+document.getElementById('searchBox').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')searchInput.focus()});
+document.getElementById('searchFocus').addEventListener('click',()=>searchInput.focus());
+document.getElementById('searchClear').addEventListener('click',()=>{document.body.classList.remove('all-services-mode');searchInput.value='';document.getElementById('cards').classList.remove('expanded');document.querySelector('#services h2').textContent='Rekomendasi untukmu';filterServices('');searchInput.focus();});
+searchInput.addEventListener('input',e=>{document.body.classList.remove('all-services-mode');document.querySelectorAll('.cat').forEach(x=>x.classList.remove('active'));document.getElementById('cards').classList.add('expanded');document.querySelector('#services h2').textContent=e.target.value.trim()?'Hasil pencarian':'Layanan JOS';filterServices(e.target.value)});
+searchInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();filterServices(searchInput.value);document.getElementById('cards').scrollIntoView({behavior:'smooth',block:'start'});}});
+document.querySelectorAll('.cat').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.cat').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById('search').value='';const key=btn.dataset.filter;const cardsArea=document.getElementById('cards');if(key==='Lainnya'){document.body.classList.add('all-services-mode');cardsArea.classList.add('expanded');filterServices('');document.getElementById('cards').scrollIntoView({behavior:'smooth',block:'start'});}else{document.body.classList.remove('all-services-mode');cardsArea.classList.add('expanded');document.querySelector('#services h2').textContent='Layanan '+btn.textContent.trim();filterServices(key);}}));
+function showAll(){document.body.classList.add('all-services-mode');document.querySelectorAll('.cat').forEach(x=>x.classList.remove('active'));document.getElementById('search').value='';document.getElementById('cards').classList.add('expanded');filterServices('');document.getElementById('cards').scrollIntoView({behavior:'smooth',block:'start'});}
+document.querySelectorAll('.nav').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));btn.classList.add('active')}));
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script id="jos-supabase-portals">
+const josDb=window.supabase.createClient('https://aqhfkcdglfijdtsgyzmq.supabase.co','sb_publishable_Ymh1RsVe9Ba9No27l58jGA_hpD04lSw');
+let josCustomerSignup=false,josMitraSignup=false,josCurrentRole=null;
+function openJosPortal(which){document.querySelectorAll('.portal-layer').forEach(x=>x.classList.remove('open'));document.getElementById(which==='orders'?'josPortalOrders':'josPortalCustomer').classList.add('open');if(which==='orders'){josLoadCustomerOrders();}else{if(which==='mitra'||which==='admin')josPortalTab(which);else josPortalTab('customer');josRefreshPortalSession();}if(which==='mitra'||which==='admin')history.replaceState(null,'',location.pathname+location.search+'#'+which);else if(which==='customer')history.replaceState(null,'',location.pathname+location.search+'#akun');}
+function closeJosPortals(){document.querySelectorAll('.portal-layer').forEach(x=>x.classList.remove('open'));}
+function josPortalTab(role){['customer','mitra','admin'].forEach(k=>{const id='jos'+(k==='customer'?'Customer':k==='mitra'?'Mitra':'Admin')+'AuthBox';const box=document.getElementById(id);if(box)box.classList.toggle('hidden',k!==role);});const links=document.getElementById('josOtherPortals');if(links)links.classList.toggle('hidden',role!=='customer');}
+function josMsg(id,msg,bad=false){const e=document.getElementById(id);if(e){e.textContent=msg;e.style.color=bad?'#a12626':'#07569a';}}
+function josToggleForm(kind){if(kind==='customer'){josCustomerSignup=!josCustomerSignup;document.getElementById('josCustomerNameWrap').classList.toggle('hidden',!josCustomerSignup);document.getElementById('josCustomerWaWrap').classList.toggle('hidden',!josCustomerSignup);document.getElementById('josCustomerAuthTitle').textContent=josCustomerSignup?'Daftar Pelanggan':'Login Pelanggan';document.getElementById('josCustomerAuthSubmit').textContent=josCustomerSignup?'Buat Akun Pelanggan':'Login Pelanggan';document.getElementById('josCustomerToggleAuth').textContent=josCustomerSignup?'Sudah punya akun? Login':'Belum punya akun? Daftar pelanggan';}else{josMitraSignup=!josMitraSignup;document.getElementById('josMitraNameWrap').classList.toggle('hidden',!josMitraSignup);document.getElementById('josMitraAuthTitle').textContent=josMitraSignup?'Daftar Mitra':'Login Mitra';document.querySelector('#josMitraAuthForm button').textContent=josMitraSignup?'Buat Akun Mitra':'Login Mitra';document.getElementById('josMitraToggleAuth').textContent=josMitraSignup?'Sudah punya akun? Login':'Belum punya akun? Daftar mitra';}}
+document.getElementById('josCustomerToggleAuth').onclick=e=>{e.preventDefault();josToggleForm('customer')};document.getElementById('josMitraToggleAuth').onclick=e=>{e.preventDefault();josToggleForm('mitra')};
+document.getElementById('josCustomerAuthForm').onsubmit=async e=>{e.preventDefault();const email=josCustomerEmail.value.trim().toLowerCase(),password=josCustomerPassword.value;try{if(josCustomerSignup){if(password.length<8)throw Error('Password minimal 8 karakter.');const {data,error}=await josDb.auth.signUp({email,password,options:{data:{full_name:josCustomerRegName.value.trim(),phone:josCustomerWA.value.trim(),account_type:'customer'},emailRedirectTo:'https://jasaorangsuruhanjos-cmyk.github.io/BOKING/#akun'}});if(error)throw error;josMsg('josCustomerAuthMsg',data.session?'Akun pelanggan berhasil dibuat.':'Pendaftaran berhasil. Periksa email untuk konfirmasi.');}else{const {data,error}=await josDb.auth.signInWithPassword({email,password});if(error)throw error;const role=await josGetRole(data.user);if(role!=='customer')throw Error('Akun ini bukan akun pelanggan. Silakan gunakan portal yang sesuai.');await josShowRole(data.user,'customer');}}catch(err){josMsg('josCustomerAuthMsg',err.message,true)}};
+document.getElementById('josMitraAuthForm').onsubmit=async e=>{e.preventDefault();const email=josMitraEmail.value.trim().toLowerCase(),password=josMitraPassword.value;try{if(josMitraSignup){if(password.length<8)throw Error('Password minimal 8 karakter.');const {data,error}=await josDb.auth.signUp({email,password,options:{data:{full_name:josMitraRegName.value.trim(),account_type:'mitra'},emailRedirectTo:'https://jasaorangsuruhanjos-cmyk.github.io/BOKING/#akun'}});if(error)throw error;josMsg('josMitraAuthMsg',data.session?'Akun mitra dibuat. Lengkapi profil dan tunggu persetujuan admin.':'Pendaftaran berhasil. Periksa email untuk konfirmasi, lalu login di Portal Mitra.');}else{const {data,error}=await josDb.auth.signInWithPassword({email,password});if(error)throw error;const role=await josGetRole(data.user);if(role!=='mitra')throw Error('Akun ini bukan akun mitra. Gunakan portal pelanggan atau daftar mitra.');await josShowRole(data.user,'mitra');}}catch(err){josMsg('josMitraAuthMsg',err.message,true)}};
+document.getElementById('josAdminAuthForm').onsubmit=async e=>{e.preventDefault();try{const {data,error}=await josDb.auth.signInWithPassword({email:josAdminEmail.value.trim().toLowerCase(),password:josAdminPassword.value});if(error)throw error;const {data:row,error:roleErr}=await josDb.from('jos_admin_users').select('user_id').eq('user_id',data.user.id).maybeSingle();if(roleErr)throw roleErr;if(!row){await josDb.auth.signOut();throw Error('Akun ini belum diberi hak admin di database.');}await josShowRole(data.user,'admin');}catch(err){josMsg('josAdminAuthMsg',err.message,true)}};
+async function josGetRole(user){const meta=user.user_metadata||{};if(meta.account_type==='mitra')return 'mitra';const {data}=await josDb.from('jos_mitra_profiles').select('id').eq('id',user.id).maybeSingle();return data?'mitra':'customer';}
+async function josShowRole(user,role){josCurrentRole=role;['josCustomerAuthBox','josMitraAuthBox','josAdminAuthBox'].forEach(id=>document.getElementById(id).classList.add('hidden'));if(role==='customer'){document.getElementById('josCustomerProfileBox').classList.remove('hidden');const m=user.user_metadata||{};josCustomerProfileSummary.textContent=(m.full_name||'Pelanggan')+' • '+user.email+' • '+(m.phone||'WhatsApp belum diisi');}if(role==='mitra'){document.getElementById('josMitraProfileBox').classList.remove('hidden');await josLoadMitraProfile(user);}if(role==='admin'){document.getElementById('josAdminDashboard').classList.remove('hidden');await josAdminLoad('orders');}}
+async function josRefreshPortalSession(){const {data}=await josDb.auth.getSession();if(data.session){const user=data.session.user;let role=await josGetRole(user);const {data:admin}=await josDb.from('jos_admin_users').select('user_id').eq('user_id',user.id).maybeSingle();if(admin)role='admin';await josShowRole(user,role);}}
+async function josPortalLogout(){await josDb.auth.signOut();josCurrentRole=null;document.querySelectorAll('#josPortalCustomer .portal-card').forEach(x=>{if(x.id!=='josPortalCustomer'){} });['josCustomerProfileBox','josMitraProfileBox','josAdminDashboard'].forEach(id=>document.getElementById(id).classList.add('hidden'));josPortalTab('customer');josMsg('josCustomerAuthMsg','Anda sudah keluar dari akun.');}
+document.getElementById('josMitraProfileForm').onsubmit=async e=>{e.preventDefault();const {data:{user}}=await josDb.auth.getUser();if(!user)return;try{const payload={id:user.id,nama_lengkap:josMitraFullName.value.trim(),whatsapp:josMitraFullWA.value.trim(),alamat_domisili:josMitraAddress.value.trim(),kota:josMitraCity.value.trim(),layanan_keahlian:josMitraSkills.value.split(',').map(x=>x.trim()).filter(Boolean),pengalaman:josMitraExperience.value.trim()||null};const {error}=await josDb.from('jos_mitra_profiles').upsert(payload,{onConflict:'id'});if(error)throw error;josMsg('josMitraProfileStatus','Pendaftaran tersimpan. Status menunggu persetujuan admin.');await josLoadMitraProfile(user);}catch(err){josMsg('josMitraProfileStatus',err.message,true)}};
+async function josLoadMitraProfile(user){const {data,error}=await josDb.from('jos_mitra_profiles').select('*').eq('id',user.id).maybeSingle();if(error){josMsg('josMitraProfileStatus',error.message,true);return;}if(data){josMitraFullName.value=data.nama_lengkap||'';josMitraFullWA.value=data.whatsapp||'';josMitraAddress.value=data.alamat_domisili||'';josMitraCity.value=data.kota||'';josMitraSkills.value=(data.layanan_keahlian||[]).join(', ');josMitraExperience.value=data.pengalaman||'';josMitraProfileStatus.textContent='Status akun: '+(data.status_akun||'menunggu_persetujuan');if(data.status_akun==='aktif'){josMitraProfileForm.classList.add('hidden');josMitraDash.classList.remove('hidden');await josMitraLoadOrders();}}}
+async function josMitraLoadOrders(){const {data:{user}}=await josDb.auth.getUser();if(!user)return;const {data:profile}=await josDb.from('jos_mitra_profiles').select('*').eq('id',user.id).maybeSingle();if(!profile||profile.status_akun!=='aktif')return;const [available,mine]=await Promise.all([josDb.from('orders').select('*').eq('status','Tersedia').order('dibuat_pada',{ascending:false}),josDb.from('orders').select('*').eq('whatsapp_mitra',profile.whatsapp).order('dibuat_pada',{ascending:false})]);josMitraAvailable.innerHTML=(available.data||[]).map(o=>`<div class="portal-item"><strong>${o.nama_layanan||'Layanan'}</strong><small>${o.kode_order||''} • ${o.alamat||''}<br>${o.deskripsi||''}</small><button onclick="josMitraTake('${o.id}')">Ambil order</button></div>`).join('')||'<p>Belum ada order tersedia.</p>';josMitraMine.innerHTML=(mine.data||[]).map(o=>`<div class="portal-item"><strong>${o.nama_layanan||'Layanan'} — ${o.status||''}</strong><small>${o.kode_order||''} • ${o.alamat||''}</small><button onclick="josMitraUpdate('${o.id}','Dalam proses pengerjaan')">Mulai kerja</button><button onclick="josMitraUpdate('${o.id}','Selesai')">Selesai</button></div>`).join('')||'<p>Belum ada order yang diambil.</p>';}
+async function josMitraTake(id){const {data:{user}}=await josDb.auth.getUser();const {data:p}=await josDb.from('jos_mitra_profiles').select('*').eq('id',user.id).single();const {error}=await josDb.from('orders').update({nama_mitra:p.nama_lengkap,whatsapp_mitra:p.whatsapp,status:'Menunggu Mitra',diambil_pada:new Date().toISOString()}).eq('id',id).eq('status','Tersedia');if(error)alert(error.message);else await josMitraLoadOrders();}
+async function josMitraUpdate(id,status){const {error}=await josDb.from('orders').update({status}).eq('id',id);if(error)alert(error.message);else await josMitraLoadOrders();}
+async function josLoadCustomerOrders(){const box=document.getElementById('josCustomerOrdersList');if(!box)return;const {data:{user}}=await josDb.auth.getUser();if(!user){josOrdersPortalMessage.textContent='Login sebagai pelanggan untuk melihat pesanan.';box.innerHTML='';return;}const {data,error}=await josDb.from('orders').select('*').eq('customer_id',user.id).order('dibuat_pada',{ascending:false}).limit(100);if(error){josOrdersPortalMessage.textContent=error.message;return;}josOrdersPortalMessage.textContent='Pesanan tersimpan di akun '+user.email;box.innerHTML=(data||[]).map(o=>`<div class="portal-item"><strong>${o.nama_layanan||'Pesanan'} — ${o.status||'Diproses'}</strong><small>Kode: ${o.kode_order||'-'}<br>Alamat: ${o.alamat||'-'}<br>Detail: ${o.deskripsi||'-'}<br>Mitra: ${o.nama_mitra||'Menunggu mitra'}</small></div>`).join('')||'<p>Belum ada pesanan.</p>';}
+async function josAdminLoad(kind){const box=josAdminData;box.textContent='Memuat data...';try{if(kind==='orders'){const {data,error}=await josDb.from('orders').select('*').order('dibuat_pada',{ascending:false}).limit(100);if(error)throw error;box.innerHTML=(data||[]).map(o=>`<div class="portal-item"><strong>${o.kode_order||''} • ${o.nama_layanan||''}</strong><small>${o.nama_pelanggan||''} • ${o.whatsapp_pelanggan||''}<br>${o.alamat||''}<br>Status: ${o.status||''}</small><button onclick="josAdminSetOrder('${o.id}','Tersedia')">Tersedia</button><button onclick="josAdminSetOrder('${o.id}','Dalam proses pengerjaan')">Dalam proses</button><button onclick="josAdminSetOrder('${o.id}','Selesai')">Selesai</button><button class="reject" onclick="josAdminSetOrder('${o.id}','Dibatalkan')">Batalkan</button></div>`).join('')||'<p>Belum ada pesanan.</p>';}else{const {data,error}=await josDb.from('jos_mitra_profiles').select('*').limit(100);if(error)throw error;box.innerHTML=(data||[]).map(m=>`<div class="portal-item"><strong>${m.nama_lengkap||''}</strong><small>${m.whatsapp||''} • ${m.kota||''}<br>Keahlian: ${(m.layanan_keahlian||[]).join(', ')}<br>Status: ${m.status_akun||'menunggu_persetujuan'}</small><button onclick="josAdminSetMitra('${m.id}','aktif')">Setujui</button><button class="reject" onclick="josAdminSetMitra('${m.id}','ditolak')">Tolak</button></div>`).join('')||'<p>Belum ada pendaftaran mitra.</p>';}}catch(e){box.textContent='Gagal memuat: '+e.message;}}
+async function josAdminSetOrder(id,status){const {error}=await josDb.from('orders').update({status}).eq('id',id);if(error)alert(error.message);else josAdminLoad('orders')}
+async function josAdminSetMitra(id,status){const {error}=await josDb.from('jos_mitra_profiles').update({status_akun:status}).eq('id',id);if(error)alert(error.message);else josAdminLoad('mitra')}
+josDb.auth.onAuthStateChange(()=>{if(document.getElementById('josPortalOrders').classList.contains('open'))josLoadCustomerOrders()});
+</script>
+
+</body>
+</html>
