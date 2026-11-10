@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0759a8"><meta name="description" content="Aplikasi Mitra JOS - terima pesanan dan pantau pekerjaan.">
+<title>Mitra JOS</title>
+<link rel="manifest" href="./manifest-mitra.json">
+<style>
+:root{--blue:#0759a8;--blue2:#0d77d5;--bg:#f3f7fc;--ink:#172435;--muted:#68788b;--line:#e4ebf3;--green:#15945b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{background:linear-gradient(135deg,#064a91,#0c78d2);color:white;padding:22px 18px 28px;border-radius:0 0 24px 24px}
+.top{display:flex;align-items:center;gap:12px}.logo{width:48px;height:48px;border-radius:15px;background:#fff;color:var(--blue);display:grid;place-items:center;font-weight:900;font-size:21px;box-shadow:0 5px 18px #002c6040}
+h1{font-size:21px;margin:0}header p{margin:3px 0 0;color:#dcecff;font-size:13px}
+main{max-width:680px;margin:-12px auto 40px;padding:0 14px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:17px;margin:14px 0;box-shadow:0 5px 20px #12304c0b}
+h2{font-size:17px;margin:0 0 13px}.muted,.hint{color:var(--muted);font-size:13px}
+input{width:100%;padding:13px;border:1px solid #d6e0eb;border-radius:12px;font:inherit;margin:5px 0 12px}
+button{border:0;border-radius:12px;padding:12px 15px;font:700 14px system-ui;cursor:pointer}
+.primary{background:var(--blue);color:#fff;width:100%}.soft{background:#eaf3fd;color:var(--blue)}.green{background:#e5f7ed;color:#087b45}.danger{background:#fff0f0;color:#a72c2c}
+button:disabled{opacity:.55;cursor:wait}.hidden{display:none!important}
+.tabs{display:flex;gap:8px}.tabs button{flex:1}.tabs .active{background:var(--blue);color:#fff}
+.order{border:1px solid var(--line);border-radius:15px;padding:14px;margin:10px 0}.order strong{display:block;font-size:15px}.order small{display:block;color:var(--muted);line-height:1.55;margin:6px 0 10px;white-space:pre-line}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}
+.status{display:inline-block;padding:5px 9px;border-radius:20px;background:#edf4fb;color:#315b80;font-size:12px;font-weight:700;margin:7px 0}
+.notice{padding:12px;border-radius:12px;background:#fff8e8;color:#805400;font-size:13px;line-height:1.5}
+.ok{background:#e9f8ef;color:#116b3c}.err{background:#fff0f0;color:#a72c2c}
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sounddot{width:10px;height:10px;border-radius:50%;background:#9aa8b6;display:inline-block;margin-right:7px}.sounddot.on{background:#17a45e;box-shadow:0 0 0 4px #17a45e20}
+footer{text-align:center;color:#8a98a8;font-size:12px;padding:20px}
+</style></head>
+<body>
+<header><div class="top"><div class="logo">JOS</div><div><h1>Portal Mitra JOS</h1><p>Bersama JOS, semua pasti beres!</p></div></div></header>
+<main>
+<section class="panel" id="loginPanel"><h2>Login Mitra</h2><form id="loginForm"><label class="muted">Email</label><input id="email" type="email" autocomplete="username" required><label class="muted">Password</label><input id="password" type="password" autocomplete="current-password" required><button class="primary" id="loginBtn">LOGIN MITRA</button></form><p class="hint">Gunakan akun mitra JOS yang sudah terdaftar dan disetujui Admin.</p><div id="loginMsg" class="hint" role="status"></div></section>
+<section class="panel hidden" id="appPanel">
+<div class="switchrow"><div><h2 id="greeting">Dashboard Mitra</h2><div class="muted" id="accountStatus">Memeriksa akun...</div></div><button class="soft" id="logoutBtn">Keluar</button></div>
+<div class="panel" style="margin:14px 0;padding:13px">
+ <div class="switchrow"><div><b><span class="sounddot" id="soundDot"></span>Notifikasi suara order baru</b><div class="hint" id="soundText">Aktifkan suara agar terdengar saat ada pesanan baru.</div></div><button class="soft" id="soundBtn">AKTIFKAN</button></div>
+ <div class="hint" style="margin-top:8px">Izinkan notifikasi browser jika diminta. Suara aktif saat aplikasi/halaman sedang terbuka.</div>
+</div>
+<div class="tabs"><button class="active" id="availableTab">Order tersedia</button><button class="soft" id="mineTab">Order saya</button></div>
+<div id="connection" class="hint" style="margin:12px 2px">Menghubungkan...</div>
+<div id="availableList"></div><div id="mineList" class="hidden"></div>
+</section>
+<section class="panel hidden" id="pendingPanel"><h2>Pendaftaran Mitra</h2><p id="pendingText">Status akun menunggu persetujuan Admin JOS.</p><button class="soft" id="pendingRefresh">PERIKSA STATUS</button></section>
+</main><footer>JOS — Jasa Orang Suruhan</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const DB_URL='https://aqhfkcdglfijdtsgyzmq.supabase.co';
+const DB_KEY='sb_publishable_Ymh1RsVe9Ba9No27l58jGA_hpD04lSw';
+const db=window.supabase.createClient(DB_URL,DB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'jos-mitra-auth'}});
+const $=id=>document.getElementById(id);
+let currentUser=null,profile=null,channel=null,activeTab='available',soundEnabled=false,audioCtx=null,seenOrders=new Set(),knownReady=new Set(),pollTimer=null;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function message(id,text,cls=''){const e=$(id);e.textContent=text;e.className=cls||'hint'}
+function beep(){if(!soundEnabled||!audioCtx)return;try{const now=audioCtx.currentTime;[0,0.22,0.44].forEach((t,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=i===1?1046:880;g.gain.setValueAtTime(.0001,now+t);g.gain.exponentialRampToValueAtTime(.22,now+t+.025);g.gain.exponentialRampToValueAtTime(.0001,now+t+.16);o.connect(g);g.connect(audioCtx.destination);o.start(now+t);o.stop(now+t+.18)})}catch(e){console.warn(e)}}
+async function enableSound(){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw Error('Browser tidak mendukung audio.');audioCtx=audioCtx||new AC();if(audioCtx.state==='suspended')await audioCtx.resume();soundEnabled=true;beep();$('soundDot').classList.add('on');$('soundBtn').textContent='SUARA AKTIF';$('soundText').textContent='Suara order baru sudah aktif di perangkat ini.';if('Notification'in window&&Notification.permission==='default'){const p=await Notification.requestPermission();if(p==='granted')$('soundText').textContent='Suara dan notifikasi browser aktif.'}}catch(e){$('soundText').textContent='Tidak dapat mengaktifkan suara: '+e.message}}
+$('soundBtn').onclick=enableSound;
+function notifyOrder(o){beep();if('Notification'in window&&Notification.permission==='granted'){try{new Notification('Order baru — JOS',{body:(o.nama_layanan||'Pesanan baru')+' • '+(o.alamat||'Buka Portal Mitra'),tag:'jos-order-'+o.id})}catch(e){}}}
+async function login(e){e.preventDefault();$('loginBtn').disabled=true;$('loginBtn').textContent='MEMERIKSA...';message('loginMsg','Memeriksa akun mitra...');try{const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim().toLowerCase(),password:$('password').value});if(error)throw error;currentUser=data.user;await startApp()}catch(err){message('loginMsg',err.message,'err')}finally{$('loginBtn').disabled=false;$('loginBtn').textContent='LOGIN MITRA'}}
+$('loginForm').onsubmit=login;
+async function checkProfile(){const {data,error}=await db.from('jos_mitra_profiles').select('*').eq('id',currentUser.id).maybeSingle();if(error)throw error;profile=data;if(!profile)throw Error('Profil mitra belum ditemukan. Lengkapi pendaftaran melalui Portal Mitra utama.');return profile}
+async function startApp(){try{await checkProfile();$('loginPanel').classList.add('hidden');if(profile.status_akun!=='aktif'){$('pendingPanel').classList.remove('hidden');$('pendingText').textContent='Status akun: '+(profile.status_akun||'menunggu_persetujuan')+'. Menunggu persetujuan Admin JOS.';return}
+$('pendingPanel').classList.add('hidden');$('appPanel').classList.remove('hidden');$('greeting').textContent='Halo, '+(profile.nama_lengkap||'Mitra JOS');$('accountStatus').textContent='Mitra aktif • '+(profile.kota||'');await loadOrders(true);subscribeOrders();if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(()=>loadOrders(false).catch(console.error),25000);
+}catch(err){$('loginPanel').classList.remove('hidden');message('loginMsg',err.message,'err')}}
+$('pendingRefresh').onclick=async()=>{try{await checkProfile();if(profile.status_akun==='aktif')await startApp();else $('pendingText').textContent='Status masih '+profile.status_akun+'. Menunggu persetujuan Admin JOS.'}catch(e){$('pendingText').textContent=e.message}};
+function subscribeOrders(){if(channel)db.removeChannel(channel);channel=db.channel('jos-mitra-orders-live').on('postgres_changes',{event:'*',schema:'public',table:'orders'},payload=>{const row=payload.new||{};const old=payload.old||{};const ready=String(row.status||'').toLowerCase()==='tersedia';const becameReady=ready&&(payload.eventType==='INSERT'||String(old.status||'').toLowerCase()!=='tersedia');if(becameReady&&!knownReady.has(String(row.id))){knownReady.add(String(row.id));if(seenOrders.has(String(row.id)))notifyOrder(row)}loadOrders(false).catch(console.error)}).subscribe(status=>{$('connection').textContent=status==='SUBSCRIBED'?'● Terhubung — pemantauan order aktif':'Status koneksi: '+status})}
+async function loadOrders(initial){if(!currentUser)return;const [a,m]=await Promise.all([db.from('orders').select('*').eq('status','Tersedia').order('dibuat_pada',{ascending:false}),db.from('orders').select('*').eq('whatsapp_mitra',profile.whatsapp).order('dibuat_pada',{ascending:false})]);if(a.error)throw a.error;if(m.error)throw m.error;const rows=a.data||[];if(initial){seenOrders=new Set(rows.map(x=>String(x.id)));knownReady=new Set(rows.map(x=>String(x.id)))}else{for(const o of rows){const id=String(o.id);if(!knownReady.has(id)){knownReady.add(id);if(seenOrders.size)notifyOrder(o)}}}renderOrders(rows,m.data||[])}
+function renderOrders(available,mine){$('availableList').innerHTML=available.map(o=>`<article class="order"><strong>${esc(o.nama_layanan||'Layanan JOS')}</strong><span class="status">ORDER TERSEDIA</span><small>${esc(o.kode_order||'')}<br>Alamat: ${esc(o.alamat||'-')}<br>Detail: ${esc(o.deskripsi||'-')}<br>Upah mitra: ${o.upah_mitra!=null?'Rp '+Number(o.upah_mitra).toLocaleString('id-ID'):'Menunggu informasi admin'}</small><button class="primary" onclick="takeOrder('${esc(o.id)}')">AMBIL ORDER</button></article>`).join('')||'<div class="panel muted">Belum ada order tersedia saat ini.</div>';
+$('mineList').innerHTML=mine.map(o=>`<article class="order"><strong>${esc(o.nama_layanan||'Layanan JOS')}</strong><span class="status">${esc(o.status||'')}</span><small>${esc(o.kode_order||'')}<br>Alamat: ${esc(o.alamat||'-')}<br>Upah mitra: ${o.upah_mitra!=null?'Rp '+Number(o.upah_mitra).toLocaleString('id-ID'):'-'}</small><div class="actions">${!String(o.status||'').toLowerCase().includes('selesai')?`<button class="soft" onclick="updateOrder('${esc(o.id)}','Mitra perjalanan')">MENUJU LOKASI</button><button class="green" onclick="updateOrder('${esc(o.id)}','Dalam proses pengerjaan')">MULAI KERJA</button><button class="green" onclick="updateOrder('${esc(o.id)}','Selesai')">SELESAI</button>`:''}</div></article>`).join('')||'<div class="panel muted">Belum ada order yang diambil.</div>'}
+async function takeOrder(id){if(!confirm('Ambil pesanan ini?'))return;try{const {data,error}=await db.rpc('jos_mitra_take_order',{p_order_id:String(id)});if(error)throw error;if(data&&data.success===false)throw Error(data.message||'Pesanan tidak dapat diambil.');alert('Order berhasil diambil.');await loadOrders(false)}catch(e){alert('Gagal mengambil order: '+e.message)}}
+async function updateOrder(id,status){try{const {error}=await db.rpc('jos_mitra_update_order_status',{p_order_id:String(id),p_status:status});if(error)throw error;await loadOrders(false)}catch(e){alert('Gagal memperbarui status: '+e.message)}}
+$('availableTab').onclick=()=>showTab('available');$('mineTab').onclick=()=>showTab('mine');
+function showTab(t){activeTab=t;$('availableList').classList.toggle('hidden',t!=='available');$('mineList').classList.toggle('hidden',t!=='mine');$('availableTab').className=t==='available'?'active':'soft';$('mineTab').className=t==='mine'?'active':'soft'}
+$('logoutBtn').onclick=async()=>{if(channel)await db.removeChannel(channel);if(pollTimer)clearInterval(pollTimer);await db.auth.signOut();currentUser=null;profile=null;$('appPanel').classList.add('hidden');$('pendingPanel').classList.add('hidden');$('loginPanel').classList.remove('hidden')};
+(async()=>{const {data}=await db.auth.getSession();if(data.session){currentUser=data.session.user;await startApp()}})();
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js',{scope:'./'}).catch(()=>{}));
+</script></body></html>
