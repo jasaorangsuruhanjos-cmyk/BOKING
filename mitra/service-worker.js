@@ -1,42 +1,47 @@
 
-const CACHE_NAME = 'jos-mitra-shell-v1';
-const APP_SHELL = './index.html';
+const CACHE_NAME = 'jos-mitra-app-v1';
+const APP_SCOPE = self.registration.scope;
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.add(APP_SHELL))
-  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-
     await Promise.all(
-      keys
-        .filter(key =>
-          key.startsWith('jos-mitra-') &&
-          key !== CACHE_NAME
-        )
-        .map(key => caches.delete(key))
+      keys.filter(key =>
+        key.startsWith('jos-mitra-app-') &&
+        key !== CACHE_NAME
+      ).map(key => caches.delete(key))
     );
-
     await self.clients.claim();
   })());
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
+  const request = event.request;
+  if (request.method !== 'GET') return;
 
-  const url = new URL(event.request.url);
+  const url = new URL(request.url);
+  if (
+    url.origin !== self.location.origin ||
+    !url.href.startsWith(APP_SCOPE)
+  ) return;
 
-  if (url.origin !== self.location.origin) return;
-
-  event.respondWith(
-    fetch(event.request).catch(async () => {
-      const cached = await caches.match(event.request);
-      return cached || caches.match(APP_SHELL);
-    })
-  );
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(request);
+      if (response && response.ok && response.type === 'basic') {
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(request, response.clone());
+      }
+      return response;
+    } catch (error) {
+      const cached = await caches.match(request);
+      if (cached) return cached;
+      throw error;
+    }
+  })());
 });
+
