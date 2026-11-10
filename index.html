@@ -1594,6 +1594,14 @@ document.addEventListener('click',function(event){
 document.getElementById('overlay')?.addEventListener('click',function(event){
   if(event.target===this)closeSheet();
 });
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js")
+      .then(() => console.log("JOS PWA aktif"))
+      .catch((error) => console.error("JOS PWA error:", error));
+  });
+}
 </script>
 </body>
 </html>
