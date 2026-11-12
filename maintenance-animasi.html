@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#073b35">
+  <title>JOS — Sedang Perbaikan</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      padding: 22px; background: #f3f8f6; color: #173b35;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    main {
+      width: min(100%, 430px); padding: 30px 24px 27px; text-align: center;
+      background: #fff; border: 1px solid #e2eeea; border-radius: 22px;
+      box-shadow: 0 14px 40px rgba(7, 59, 53, .09);
+    }
+    .scene {
+      position: relative; width: 190px; height: 150px; margin: 0 auto 18px;
+      display: grid; place-items: center;
+    }
+    .gear {
+      position: absolute; width: 104px; height: 104px; left: 42px; top: 18px;
+      animation: rotate 9s linear infinite;
+      filter: drop-shadow(0 7px 7px rgba(7,59,53,.12));
+    }
+    .gear svg { width: 100%; height: 100%; }
+    .gear-core {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      color: #fff; font-size: 29px; font-weight: 800;
+    }
+    .wrench {
+      position: absolute; width: 78px; height: 78px; right: 12px; bottom: 12px;
+      transform-origin: 50% 20%; animation: wrench 2.2s ease-in-out infinite;
+      filter: drop-shadow(0 5px 5px rgba(7,59,53,.15));
+    }
+    .spark {
+      position: absolute; color: #e6a23c; font-size: 22px; font-weight: 900;
+      animation: twinkle 1.4s ease-in-out infinite;
+    }
+    .spark.one { left: 15px; top: 22px; }
+    .spark.two { right: 12px; top: 25px; animation-delay: .6s; font-size: 17px; }
+    .spark.three { left: 30px; bottom: 14px; animation-delay: .9s; font-size: 15px; }
+    .status {
+      display: inline-flex; align-items: center; gap: 7px; margin-bottom: 13px;
+      padding: 7px 12px; border-radius: 999px; background: #e8f5ef;
+      color: #14734e; font-size: 12px; font-weight: 750;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #1aa36b; }
+    h1 { margin: 0 0 10px; font-size: clamp(23px, 6vw, 28px); line-height: 1.2; }
+    p { margin: 0; color: #62756f; font-size: 14px; line-height: 1.65; }
+    .loader { width: min(100%, 270px); margin: 23px auto 0; }
+    .track {
+      height: 8px; overflow: hidden; border-radius: 99px; background: #e5efeb;
+      box-shadow: inset 0 1px 2px rgba(7,59,53,.06);
+    }
+    .bar {
+      width: 38%; height: 100%; border-radius: inherit; background: #15966b;
+      animation: loading 1.7s ease-in-out infinite;
+    }
+    .loader-label { margin-top: 9px; color: #82938d; font-size: 11px; }
+    button {
+      width: 100%; margin-top: 21px; padding: 13px 18px; border: 0;
+      border-radius: 12px; background: #073b35; color: white;
+      font-size: 14px; font-weight: 750; cursor: pointer;
+    }
+    button:active { transform: scale(.99); }
+    .brand { margin-top: 18px; color: #14734e; font-size: 12px; font-weight: 750; }
+    .small { margin-top: 9px; font-size: 11px; color: #91a19c; line-height: 1.5; }
+    @keyframes rotate { to { transform: rotate(360deg); } }
+    @keyframes wrench {
+      0%, 100% { transform: rotate(-17deg) translateY(0); }
+      50% { transform: rotate(17deg) translateY(-4px); }
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: .25; transform: scale(.7) rotate(0); }
+      50% { opacity: 1; transform: scale(1.15) rotate(18deg); }
+    }
+    @keyframes loading {
+      0% { transform: translateX(-115%); }
+      55% { transform: translateX(145%); }
+      100% { transform: translateX(290%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 8s !important; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="scene" aria-label="Animasi peralatan sedang melakukan perbaikan">
+      <span class="spark one">✦</span>
+      <span class="spark two">✧</span>
+      <span class="spark three">✦</span>
+      <div class="gear" aria-hidden="true">
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#15966b" d="M51 4h18l4 13a45 45 0 0 1 9 4l12-6 13 13-6 12a45 45 0 0 1 4 9l13 4v18l-13 4a45 45 0 0 1-4 9l6 12-13 13-12-6a45 45 0 0 1-9 4l-4 13H51l-4-13a45 45 0 0 1-9-4l-12 6-13-13 6-12a45 45 0 0 1-4-9L2 69V51l13-4a45 45 0 0 1 4-9l-6-12 13-13 12 6a45 45 0 0 1 9-4z" transform="translate(0 0)"/>
+          <circle cx="60" cy="60" r="25" fill="#073b35"/>
+          <circle cx="60" cy="60" r="14" fill="#e8f5ef"/>
+        </svg>
+      </div>
+      <svg class="wrench" viewBox="0 0 100 100" aria-hidden="true">
+        <path d="M61 8a27 27 0 0 0-30 35L9 65a12 12 0 0 0 17 17l22-22A27 27 0 0 0 83 30L66 47 51 43 47 28 64 11z" fill="#e6a23c" stroke="#b87922" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="18" cy="74" r="5" fill="#fff2d8"/>
+      </svg>
+    </div>
+
+    <div class="status"><span class="dot"></span> PEMELIHARAAN SEMENTARA</div>
+    <h1>Kami Sedang Melakukan Perbaikan</h1>
+    <p>
+      Mohon maaf, layanan JOS sedang dalam pemeliharaan sementara
+      karena ada pembaruan sistem. Silakan coba kembali beberapa saat lagi.
+    </p>
+
+    <div class="loader" role="status" aria-label="Pemeriksaan layanan sedang berjalan">
+      <div class="track"><div class="bar"></div></div>
+      <div class="loader-label">Sedang memeriksa layanan...</div>
+    </div>
+
+    <button type="button" onclick="cobaLagi()">Coba Lagi</button>
+    <div class="brand">Bersama JOS, semua pasti beres!</div>
+    <div class="small" id="info">Halaman akan memeriksa ketersediaan layanan secara berkala.</div>
+  </main>
+
+  <script>
+    const appUrl = new URL("./index.html?launch=jos-pelanggan-v1", location.href);
+    let checking = false;
+
+    async function periksaLayanan() {
+      if (checking) return;
+      checking = true;
+      const info = document.getElementById("info");
+      try {
+        const response = await fetch("./index.html?maintenance-check=" + Date.now(), {
+          method: "GET",
+          cache: "no-store",
+          headers: { "X-JOS-Maintenance-Check": "1" }
+        });
+        if (response.ok) {
+          info.textContent = "Layanan sudah tersedia. Membuka aplikasi...";
+          location.replace(appUrl.href);
+          return;
+        }
+        info.textContent = "Layanan masih diperbarui. Silakan coba lagi sebentar.";
+      } catch (_) {
+        info.textContent = "Koneksi belum tersedia. Periksa kembali beberapa saat lagi.";
+      } finally {
+        checking = false;
+      }
+    }
+
+    function cobaLagi() { periksaLayanan(); }
+    setInterval(periksaLayanan, 20000);
+  </script>
+</body>
+</html>
