@@ -575,6 +575,11 @@ body.jos-order-open .bottom{display:none!important}
 #promoSlider .promo-slide img{display:block;width:100%;height:100%;object-fit:contain;background:#fff}
 </style>
 
+
+<style id="rush-services-nav-visibility">
+body.all-services-mode .bottom.rush-bottom [data-nav="Layanan"]{display:none!important}
+body:not(.all-services-mode) .bottom.rush-bottom [data-nav="Layanan"]{display:flex!important}
+</style>
 </head>
 <body>
 <div class="app">
@@ -616,6 +621,7 @@ body.jos-order-open .bottom{display:none!important}
 <article class="service" data-category="Jasa Antar Jemput" data-desc="Antar-jemput orang, barang, atau dokumen." data-detail="Isi titik jemput, tujuan, waktu, dan jenis barang/orang. Biaya berdasarkan jarak dan kebutuhan; konfirmasi admin." data-emoji="🚗" data-name="Jasa Antar Jemput"><div class="service-art">🚗</div><div class="service-info"><h3>Jasa Antar Jemput</h3><p>Antar-jemput orang, barang, atau dokumen.</p><div class="service-bottom"><span class="price">Lihat detail</span><button aria-label="Lihat detail Jasa Antar Jemput" class="add">+</button></div></div></article>
 <article class="service" data-category="Jasa Belanja" data-desc="Bantuan belanja kebutuhan harian atau kebutuhan lainnya." data-detail="Isi daftar belanja, toko/lokasi, dan alamat pengantaran. Biaya jasa dan ongkos belanja dikonfirmasi admin." data-emoji="🛒" data-name="Jasa Belanja"><div class="service-art">🛒</div><div class="service-info"><h3>Jasa Belanja</h3><p>Bantuan belanja kebutuhan harian atau kebutuhan lainnya.</p><div class="service-bottom"><span class="price">Lihat detail</span><button aria-label="Lihat detail Jasa Belanja" class="add">+</button></div></div></article>
 <article class="service" data-category="Jasa Antri" data-desc="Bantuan antre di bank, kantor, rumah sakit, dan tempat layanan lainnya." data-detail="Isi lokasi, jenis antrean, estimasi durasi, dan dokumen yang diperlukan. Harga dikonfirmasi admin." data-emoji="🧍" data-name="Jasa Antri"><div class="service-art">🧍</div><div class="service-info"><h3>Jasa Antri</h3><p>Bantuan antre di bank, kantor, rumah sakit, dan tempat layanan lainnya.</p><div class="service-bottom"><span class="price">Lihat detail</span><button aria-label="Lihat detail Jasa Antri" class="add">+</button></div></div></article>
+<article class="service" data-category="Jasa Umum / Lainnya" data-desc="Sampaikan layanan atau pekerjaan lain sesuai kebutuhanmu. Admin akan membantu mengonfirmasi detail dan biaya." data-detail="REQUEST RUSH HOUR: Tuliskan layanan yang kamu butuhkan pada catatan pesanan. Harga dikonfirmasi admin." data-emoji="📝" data-name="Jasa Umum / Lainnya"><div class="service-art">📝</div><div class="service-info"><h3>Jasa Umum / Lainnya</h3><p>Butuh bantuan lain? Tulis kebutuhanmu, admin akan membantu.</p><div class="service-bottom"><span class="price">Request layanan</span><button aria-label="Request Jasa Umum / Lainnya" class="add">+</button></div></div></article>
 </section>
 <div class="empty" id="empty">Layanan tidak ditemukan.</div>
 <section class="trust">
@@ -913,7 +919,7 @@ function openSheet(card){
  document.getElementById('movingToAddress').value='';
  document.getElementById('movingVehicle').value='';
  document.getElementById('movingPacking').checked=false;
- const options=isMoving?josMovingOptions():(JOS_SERVICE_OPTIONS[serviceName]||card.dataset.detail.split(';').map(x=>x.trim()).filter(Boolean));
+ const isRequestService=serviceName==='Jasa Umum / Lainnya';\n const options=isRequestService?[]:(isMoving?josMovingOptions():(JOS_SERVICE_OPTIONS[serviceName]||card.dataset.detail.split(';').map(x=>x.trim()).filter(Boolean)));
  options.forEach(option=>{
   const chip=document.createElement('button');chip.type='button';chip.className='choice-chip';
   if(isMoving && option.startsWith('Pindah kosan') && option.includes('diskon sampai 31 Desember 2026')){
@@ -939,18 +945,24 @@ function openSheet(card){
  document.getElementById('mitraCount').hidden=noWorker;
  document.getElementById('mitraCount').value='1';
  josApplyMovingMitraRule('');
- document.getElementById('serviceDetail').value=isRequestOnly?'REQUEST RUSH HOUR: Layanan sesuai kebutuhan pelanggan.':'';
- if(isRequestOnly){
-  document.getElementById('selectedChoiceSummary').textContent='Request layanan sesuai kebutuhan pelanggan.';
-  updateOrderEstimate('');
- }
+ document.getElementById('serviceDetail').value='';
  document.getElementById('jobDate').value='';document.getElementById('jobTime').value='';
  document.getElementById('jobNote').value='';
  document.getElementById('selectedChoiceSummary').textContent='Belum ada pilihan yang dipilih.';
  updateOrderEstimate('');
  document.getElementById('missingServiceNotice').hidden=true;
  josUpdateJobMediaVisibility();
- toggle.hidden=false;document.body.classList.add('jos-order-open');
+ if(isRequestService){
+  toggle.hidden=true;choices.hidden=true;
+  document.getElementById('sheetTitle').textContent='Request Layanan';
+  document.getElementById('sheetDesc').textContent='Tuliskan layanan atau pekerjaan yang kamu butuhkan pada catatan pesanan. Admin akan mengonfirmasi detail dan biaya.';
+  document.getElementById('serviceDetail').value='REQUEST RUSH HOUR: Layanan sesuai kebutuhan pelanggan. Harga dikonfirmasi admin.';
+  document.getElementById('selectedChoiceSummary').textContent='Request layanan — detail kebutuhan ditulis pada catatan pesanan.';
+  const notice=document.getElementById('missingServiceNotice');
+  notice.textContent='Jelaskan kebutuhan layananmu secara lengkap pada kolom catatan pesanan. Admin akan membantu mengonfirmasi biaya.';
+  notice.hidden=false;
+ }else{toggle.hidden=false;}
+ document.body.classList.add('jos-order-open');
  document.getElementById('overlay').classList.add('show');
 }
 function openCustomService(rawName){
@@ -1248,7 +1260,7 @@ searchInput.addEventListener('input',e=>{document.body.classList.remove('all-ser
 searchInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const term=searchInput.value.trim();filterServices(term);const found=cards.some(card=>card.style.display!=='none');if(term&&!found){openCustomService(term);}else{document.getElementById('cards').scrollIntoView({behavior:'smooth',block:'start'});}}});
 document.querySelectorAll('.cat').forEach(btn=>btn.addEventListener('click',()=>{
   const key=btn.dataset.filter;
-  if(key==='Lainnya'){openCustomService('Layanan Lainnya');return;}
+  if(key==='Lainnya'){const requestCard=cards.find(card=>card.dataset.name==='Jasa Umum / Lainnya');if(requestCard)openSheet(requestCard);return;}
   const categoryTargets={
     Pindahan:'Pindahan & Angkut Barang',
     Cleaning:'Cleaning Service',
@@ -1307,20 +1319,15 @@ document.querySelectorAll('.cat').forEach(btn=>btn.addEventListener('click',()=>
 
 <script id="jos-bottom-navigation-fix">
 function josBottomNavigate(destination){
-  document.querySelectorAll('.portal-layer').forEach(layer=>layer.classList.remove('open'));
-  document.querySelectorAll('.nav[data-nav]').forEach(btn=>{
-    btn.classList.toggle('active',btn.dataset.nav===(destination==='home'?'Beranda':'Layanan'));
-  });
-  if(destination==='home'){
-    if(typeof showHome==='function') showHome();
-    document.body.classList.remove('services-page','all-services-mode');
-    if(typeof setJosPageStatus==='function') setJosPageStatus('Beranda');
-  }else if(destination==='services'){
-    if(typeof showAll==='function') showAll();
-    document.body.classList.add('services-page','all-services-mode');
-    if(typeof setJosPageStatus==='function') setJosPageStatus('Layanan');
-  }
+ document.querySelectorAll('.portal-layer').forEach(layer=>layer.classList.remove('open'));
+ if(destination==='home'){
+  if(typeof showHome==='function')showHome();
+  document.querySelectorAll('.nav[data-nav]').forEach(btn=>btn.classList.toggle('active',btn.dataset.nav==='Beranda'));
   window.scrollTo({top:0,behavior:'smooth'});
+ }else if(destination==='services'){
+  if(typeof showAll==='function')showAll();
+  document.querySelectorAll('.nav[data-nav]').forEach(btn=>btn.classList.toggle('active',btn.dataset.nav==='Layanan'));
+ }
 }
 </script>
 
@@ -2336,6 +2343,27 @@ josLoadCustomerOrders=async function(){
 .bottom.rush-bottom .nav:active{transform:scale(.94)!important}
 body{padding-bottom:94px!important}
 @media(max-width:360px){.bottom.rush-bottom{width:calc(100% - 16px)!important;height:64px!important}.bottom.rush-bottom .nav{font-size:9px!important}.bottom.rush-bottom .nav svg{width:19px!important;height:19px!important}}
+
+/* RUSH HOUR FIX: pastikan katalog layanan terlihat dari navigasi bawah */
+body.services-page #cards,
+body.all-services-mode #cards{
+  display:grid!important;
+  visibility:visible!important;
+  opacity:1!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+  margin-top:12px!important;
+  padding-bottom:24px!important;
+}
+body.services-page #cards .service,
+body.all-services-mode #cards .service{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+body.services-page #cards .service[hidden],
+body.all-services-mode #cards .service[hidden]{display:none!important}
 </style>
 <div id="josCustomerPhotoViewer" aria-hidden="true" onclick="if(event.target===this)josClosePhoto()">
  <div class="viewer-card"><button type="button" class="viewer-close" onclick="josClosePhoto()" aria-label="Tutup">×</button><img id="josCustomerPhotoViewerImage" alt="Foto bukti JOS"><div class="viewer-actions"><a id="josCustomerPhotoDownload" href="#" download="foto-bukti-jos">Unduh foto</a><a id="josCustomerPhotoOpenOriginal" href="#" target="_blank" rel="noopener">Buka foto asli</a></div></div>
