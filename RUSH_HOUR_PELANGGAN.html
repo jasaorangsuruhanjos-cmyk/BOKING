@@ -699,7 +699,7 @@ body.jos-order-open .bottom{display:none!important}
 <label class="field" for="jobNote">Catatan / note (opsional)</label>
 <textarea id="jobNote" rows="3" placeholder="Tulis catatan atau kebutuhan khusus pekerjaan"></textarea>
 <div class="selected-choice" id="selectedChoiceSummary">Belum ada pilihan yang dipilih.</div><input type="hidden" id="serviceDetail"/><div class="price-estimate" id="priceEstimate">Estimasi harga akhir: menunggu pilihan layanan</div>
-<button class="primary" onclick="sendOrder()">KIRIM PESANAN</button>
+<button class="primary" id="rushHourSendOrderButton" type="button">KIRIM PESANAN</button>
 </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -1227,6 +1227,17 @@ async function sendOrder(){
  }finally{
   resetButton();
  }
+}
+// Handler eksplisit untuk tombol kirim RUSH HOUR (tidak bergantung pada inline onclick).
+window.sendOrder=sendOrder;
+const rushHourSendButton=document.getElementById('rushHourSendOrderButton');
+if(rushHourSendButton){
+ rushHourSendButton.addEventListener('click',function(event){
+  event.preventDefault();
+  event.stopPropagation();
+  if(typeof sendOrder==='function') sendOrder();
+  else alert('Fungsi pengiriman belum siap. Muat ulang halaman RUSH HOUR.');
+ });
 }
 function filterServices(term){
  let count=0;
