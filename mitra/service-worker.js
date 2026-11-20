@@ -1,16 +1,21 @@
 
-// JOS Mitra Service Worker v5
+/* JOS Mitra PWA — domain jasaorangsuruhan.my.id */
+const CACHE_NAME = "jos-mitra-pwa-domain-v2";
+const APP_PATH = "/mitra/index.html";
 
-const CACHE_NAME = "jos-mitra-app-v4";
-const CACHE_PREFIX = "jos-mitra-app-";
-const APP_SCOPE = self.registration.scope;
-
-// Install
 self.addEventListener("install", (event) => {
-  event.waitUntil(self.skipWaiting());
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(async (cache) => {
+      try {
+        await cache.add(APP_PATH);
+      } catch (error) {
+        console.warn("Cache awal JOS Mitra dilewati:", error);
+      }
+    })
+  );
+  self.skipWaiting();
 });
 
-// Activate
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -18,115 +23,55 @@ self.addEventListener("activate", (event) => {
         keys
           .filter(
             (key) =>
-              key.startsWith(CACHE_PREFIX) &&
+              key.startsWith("jos-mitra-pwa-") &&
               key !== CACHE_NAME
           )
           .map((key) => caches.delete(key))
       )
-    ).then(() => self.clients.claim())
+    )
   );
+  self.clients.claim();
 });
 
-// Cache: network first
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-
-  const requestUrl = new URL(event.request.url);
+  const request = event.request;
 
   if (
-    requestUrl.origin !== self.location.origin ||
-    !requestUrl.href.startsWith(APP_SCOPE)
-  ) {
-    return;
-  }
+    request.method !== "GET" ||
+    request.mode !== "navigate"
+  ) return;
+
+  const url = new URL(request.url);
+
+  if (url.origin !== self.location.origin) return;
+  if (!url.pathname.startsWith("/mitra/")) return;
 
   event.respondWith(
-    fetch(event.request)
+    fetch(request)
       .then((response) => {
-        if (response && response.ok && response.type === "basic") {
+        if (response && response.ok) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) =>
-            cache.put(event.request, copy)
+            cache.put(request, copy)
           );
         }
         return response;
       })
-      .catch(() =>
-        caches.match(event.request).then((cached) => {
-          if (cached) return cached;
-          return new Response("Koneksi internet tidak tersedia.", {
-            status: 503,
-            headers: { "Content-Type": "text/plain; charset=utf-8" }
-          });
-        })
-      )
-  );
-});
+      .catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
 
-// Push notification
-self.addEventListener("push", (event) => {
-  let data = {};
+        const app = await caches.match(APP_PATH);
+        if (app) return app;
 
-  try {
-    data = event.data ? event.data.json() : {};
-  } catch {
-    data = {
-      body: event.data ? event.data.text() : "Ada informasi baru dari JOS."
-    };
-  }
-
-  const title = data.title || "JOS Mitra";
-  const options = {
-    body: data.body || "Ada pesanan baru tersedia.",
-    icon: new URL("jos-mitra-192.png", APP_SCOPE).href,
-    badge: new URL("jos-mitra-192.png", APP_SCOPE).href,
-    data: {
-      url: data.url || "./"
-    }
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
-});
-
-// Saat notifikasi diklik
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-
-  event.waitUntil(
-    (async () => {
-      let targetUrl;
-
-      try {
-        targetUrl = new URL(
-          event.notification.data?.url || "./",
-          APP_SCOPE
+        return new Response(
+          "JOS Mitra sedang offline. Periksa koneksi internet lalu coba lagi.",
+          {
+            headers: {
+              "Content-Type": "text/plain; charset=utf-8"
+            }
+          }
         );
-
-        if (
-          targetUrl.origin !== self.location.origin ||
-          !targetUrl.href.startsWith(APP_SCOPE)
-        ) {
-          targetUrl = new URL("./", APP_SCOPE);
-        }
-      } catch {
-        targetUrl = new URL("./", APP_SCOPE);
-      }
-
-      const windows = await self.clients.matchAll({
-        type: "window",
-        includeUncontrolled: true
-      });
-
-      for (const client of windows) {
-        if (client.url.startsWith(APP_SCOPE)) {
-          await client.navigate(targetUrl.href);
-          return client.focus();
-        }
-      }
-
-      return self.clients.openWindow(targetUrl.href);
-    })()
+      })
   );
 });
