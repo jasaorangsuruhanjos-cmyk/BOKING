@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jasaorangsuruhan.my.id/sitemap.xml
