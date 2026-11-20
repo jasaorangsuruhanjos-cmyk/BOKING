@@ -1,0 +1,20 @@
+PAKET SEO JOS – JABODETABEK
+
+Isi paket:
+- 6 halaman SEO HTML terpisah
+- sitemap.xml yang memuat halaman utama dan 6 halaman SEO
+
+Cara pasang:
+1. Ekstrak ZIP.
+2. Buka repository GitHub BOKING > Code.
+3. Upload 6 file HTML dan ganti sitemap.xml lama dengan sitemap.xml dari paket ini.
+4. Pastikan semua file berada di folder utama (sejajar dengan index.html).
+5. Commit changes.
+6. Tes masing-masing URL dengan membuka https://jasaorangsuruhan.my.id/NAMA-FILE.
+7. Di Google Search Console > Peta Situs, kirim ulang sitemap.xml.
+8. Inspeksi URL halaman baru dan minta pengindeksan jika Uji URL Aktif menyatakan halaman dapat diindeks.
+
+PENTING:
+- Jangan mengganti index.html aplikasi pelanggan.
+- Jangan menghapus robots.txt, CNAME, manifest.json, atau service-worker.js.
+- Halaman area menyebut Jabodetabek sebagai area target; ketersediaan mitra tetap harus dicek berdasarkan alamat.
