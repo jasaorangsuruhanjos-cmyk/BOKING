@@ -6,7 +6,7 @@
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <link rel="icon" type="image/png" sizes="192x192" href="rushhour-icon-192.png">
 <link rel="apple-touch-icon" sizes="192x192" href="rushhour-icon-192.png">
-<link rel="manifest" href="/rushhour-manifest.webmanifest">
+<link rel="manifest" href="/rushhour-manifest.webmanifest?v=rush-hour-customer-v3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="RUSH HOUR">
 <meta name="theme-color" content="#102f68">
@@ -1536,7 +1536,7 @@ async function josCustomerSubmit(e){
       if(!phone)throw Error('Nomor WhatsApp wajib diisi.');
       const {data,error}=await josDb.auth.signUp({email,password,options:{
         data:{full_name:fullName,phone,account_type:'customer',app_brand:'RUSH_HOUR',source_app:'RUSH_HOUR'},
-        emailRedirectTo:'https://jasaorangsuruhanjos-cmyk.github.io/BOKING/RUSH_HOUR_PELANGGAN.html#akun'
+        emailRedirectTo:'https://jasaorangsuruhan.my.id/RUSH_HOUR_PELANGGAN.html#akun'
       }});
       if(error)throw error;
       josMsg('josCustomerAuthMsg',data.session?'Akun pelanggan berhasil dibuat dan sudah login.':'Pendaftaran berhasil. Periksa email verifikasi, lalu login kembali.');
@@ -1563,8 +1563,8 @@ async function josResendVerification(kind){
   const msgId=isCustomer?'josCustomerAuthMsg':'josMitraAuthMsg';
   const btn=josEl(isCustomer?'josCustomerResendVerify':'josMitraResendVerify');
   const redirectTo=isCustomer
-    ?'https://jasaorangsuruhanjos-cmyk.github.io/BOKING/RUSH_HOUR_PELANGGAN.html#akun'
-    :'https://jasaorangsuruhanjos-cmyk.github.io/BOKING/RUSH_HOUR_PELANGGAN.html#mitra';
+    ?'https://jasaorangsuruhan.my.id/RUSH_HOUR_PELANGGAN.html#akun'
+    :'https://jasaorangsuruhan.my.id/RUSH_HOUR_PELANGGAN.html#mitra';
   if(!email){josMsg(msgId,'Masukkan email terlebih dahulu.',true);return;}
   if(btn){btn.disabled=true;btn.textContent='Mengirim...';}
   try{
@@ -1580,8 +1580,8 @@ async function josResetPassword(kind){
   const email=josVal(isCustomer?'josCustomerEmail':'josMitraEmail').toLowerCase();
   const msgId=isCustomer?'josCustomerAuthMsg':'josMitraAuthMsg';
   const redirectTo=isCustomer
-    ?'https://jasaorangsuruhanjos-cmyk.github.io/BOKING/RUSH_HOUR_PELANGGAN.html#akun'
-    :'https://jasaorangsuruhanjos-cmyk.github.io/BOKING/RUSH_HOUR_PELANGGAN.html#mitra';
+    ?'https://jasaorangsuruhan.my.id/RUSH_HOUR_PELANGGAN.html#akun'
+    :'https://jasaorangsuruhan.my.id/RUSH_HOUR_PELANGGAN.html#mitra';
   if(!email){josMsg(msgId,'Isi email akun terlebih dahulu, lalu tekan Lupa password?',true);return;}
   try{
     const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo});
@@ -1604,7 +1604,7 @@ async function josMitraSubmit(e){
       if(!josVal('josMitraRegName'))throw Error('Nama lengkap wajib diisi.');
       const {data,error}=await josMitraDb.auth.signUp({email,password,options:{
         data:{full_name:josVal('josMitraRegName'),account_type:'mitra',app_brand:'RUSH_HOUR',source_app:'RUSH_HOUR'},
-        emailRedirectTo:'https://jasaorangsuruhanjos-cmyk.github.io/BOKING/RUSH_HOUR_PELANGGAN.html#mitra'
+        emailRedirectTo:'https://jasaorangsuruhan.my.id/RUSH_HOUR_PELANGGAN.html#mitra'
       }});
       if(error)throw error;
       josMsg('josMitraAuthMsg',data.session?'Akun mitra dibuat. Silakan lengkapi profil dan tunggu persetujuan admin.':'Pendaftaran akun mitra berhasil. Verifikasi email terlebih dahulu, lalu login melalui Portal Mitra.');
@@ -2170,7 +2170,7 @@ document.getElementById('overlay')?.addEventListener('click',function(event){
 
   window.addEventListener('load', function () {
     navigator.serviceWorker.register(
-      '/rushhour-service-worker.js?v=rush-hour-domain-v2',
+      '/rushhour-service-worker.js?v=rush-hour-customer-v3',
       {
         scope: '/RUSH_HOUR_PELANGGAN.html',
         updateViaCache: 'none'

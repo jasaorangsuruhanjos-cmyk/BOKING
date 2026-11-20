@@ -1,9 +1,9 @@
 {
-  "id": "/rush-hour-app-v2",
+  "id": "/apps/rush-hour-customer-v3",
   "name": "RUSH HOUR — Jam Sibuk Anda, Kami Siap Bantu!",
   "short_name": "RUSH HOUR",
-  "description": "Layanan cepat, praktis, dan terpercaya.",
-  "start_url": "/RUSH_HOUR_PELANGGAN.html?launch=rush-hour-domain-v2",
+  "description": "Aplikasi pelanggan RUSH HOUR yang terpisah dari JOS.",
+  "start_url": "/RUSH_HOUR_PELANGGAN.html?app=rush-hour-customer-v3",
   "scope": "/RUSH_HOUR_PELANGGAN.html",
   "display": "standalone",
   "orientation": "portrait",
@@ -22,5 +22,8 @@
       "type": "image/png",
       "purpose": "any"
     }
+  ],
+  "display_override": [
+    "standalone"
   ]
 }
