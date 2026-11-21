@@ -769,7 +769,7 @@ body.jos-order-open .bottom{display:none!important}
 <div class="toast" id="toast"></div>
 <section class="portal-layer" id="josPortalCustomer"><div class="portal-wrap">
 <div class="portal-top"><h2>👤 Akun JOS Pelanggan</h2></div>
-<div class="portal-card" id="josCustomerAuthBox"><h3 id="josCustomerAuthTitle">Login Pelanggan</h3><form id="josCustomerAuthForm"><div class="hidden" id="josCustomerNameWrap"><label>Nama lengkap</label><input autocomplete="name" id="josCustomerRegName"/></div><label>Email</label><input autocomplete="email" id="josCustomerEmail" required="" type="email"/><label>Password</label><input id="josCustomerPassword" minlength="8" required="" type="password"/><div class="hidden" id="josCustomerWaWrap"><label>Nomor WhatsApp</label><input id="josCustomerWA" placeholder="08xxxxxxxxxx" type="tel"/></div><button type="submit" class="portal-submit" id="josCustomerAuthSubmit">Login Pelanggan</button></form><p><a href="#" id="josCustomerToggleAuth">Belum punya akun? Daftar pelanggan</a></p><div class="portal-msg" id="josCustomerAuthMsg" role="status"></div><div class="auth-recovery-actions"><div id="josCustomerResendCountdown" class="portal-msg" hidden></div><button type="button" id="josCustomerResendVerify" class="portal-submit" style="margin-top:8px" hidden disabled>Kirim ulang email verifikasi</button><button type="button" id="josCustomerResetPassword" class="portal-submit" style="margin-top:8px;background:#64748b">Lupa password?</button></div></div>
+<div class="portal-card" id="josCustomerAuthBox"><h3 id="josCustomerAuthTitle">Login Pelanggan</h3><form id="josCustomerAuthForm"><div class="hidden" id="josCustomerNameWrap"><label>Nama lengkap</label><input autocomplete="name" id="josCustomerRegName"/></div><label>Email</label><input autocomplete="email" id="josCustomerEmail" required="" type="email"/><label>Password</label><input id="josCustomerPassword" minlength="8" required="" type="password"/><div class="hidden" id="josCustomerWaWrap"><label>Nomor WhatsApp</label><input id="josCustomerWA" placeholder="08xxxxxxxxxx" type="tel"/></div><button type="submit" class="portal-submit" id="josCustomerAuthSubmit">Login Pelanggan</button></form><button type="button" class="portal-submit" id="josCustomerGoogleLogin" style="margin-top:10px;background:#fff;color:#263238;border:1px solid #d5dce5" onclick="josCustomerGoogleLogin()">🌐 Masuk dengan Google</button><p><a href="#" id="josCustomerToggleAuth">Belum punya akun? Daftar pelanggan</a></p><div class="portal-msg" id="josCustomerAuthMsg" role="status"></div><div class="auth-recovery-actions"><div id="josCustomerResendCountdown" class="portal-msg" hidden></div><button type="button" id="josCustomerResendVerify" class="portal-submit" style="margin-top:8px" hidden disabled>Kirim ulang email verifikasi</button><button type="button" id="josCustomerResetPassword" class="portal-submit" style="margin-top:8px;background:#64748b">Lupa password?</button></div></div>
 </div>
 <div class="portal-card hidden" id="josMitraAuthBox"><h3 id="josMitraAuthTitle">Login Mitra</h3><form id="josMitraAuthForm"><div class="hidden" id="josMitraNameWrap"><label>Nama lengkap</label><input id="josMitraRegName"/></div><label>Email</label><input id="josMitraEmail" required="" type="email"/><label>Password</label><input id="josMitraPassword" minlength="8" required="" type="password"/><button type="submit" class="portal-submit">Login Mitra</button></form><p class="portal-note">Mitra dapat mendaftar dengan email. Setelah verifikasi email, lengkapi profil dan tunggu persetujuan Admin JOS.</p><p><a href="#" id="josMitraToggleAuth">Belum punya akun? Daftar mitra</a></p><div class="portal-msg" id="josMitraAuthMsg" role="status"></div><div class="auth-recovery-actions"><button type="button" id="josMitraResendVerify" class="portal-submit" style="margin-top:8px">Kirim ulang email verifikasi</button><button type="button" id="josMitraResetPassword" class="portal-submit" style="margin-top:8px;background:#64748b">Lupa password?</button></div></div>
 <div class="portal-card hidden" id="josAdminAuthBox"><h3>Login Khusus Admin</h3><form id="josAdminAuthForm"><label>Email admin</label><input id="josAdminEmail" required="" type="email"/><label>Password</label><input id="josAdminPassword" required="" type="password"/><button type="submit" class="portal-submit">Masuk Portal Admin</button></form><div class="portal-msg" id="josAdminAuthMsg" role="status">Akses admin hanya diberikan kepada akun yang sudah terdaftar sebagai admin di database.</div></div>
@@ -1610,6 +1610,20 @@ async function josCustomerSubmit(e){
 }
 josEl('josCustomerAuthForm').onsubmit=josCustomerSubmit;
 
+// Login Google pelanggan JOS. Sesi OAuth akan diproses kembali oleh listener auth.
+async function josCustomerGoogleLogin(){
+ const btn=josEl('josCustomerGoogleLogin');
+ if(btn){btn.disabled=true;btn.textContent='Menghubungkan ke Google...';}
+ try{
+  const redirectTo=location.origin+location.pathname+location.search+'#akun';
+  const {error}=await josDb.auth.signInWithOAuth({provider:'google',options:{redirectTo}});
+  if(error)throw error;
+ }catch(err){
+  josMsg('josCustomerAuthMsg','Login Google gagal: '+(err.message||'Silakan coba kembali.'),true);
+  if(btn){btn.disabled=false;btn.textContent='🌐 Masuk dengan Google';}
+ }
+}
+
 // Bantuan verifikasi dan pemulihan akun tanpa mengubah/menghapus akun yang sudah ada.
 async function josResendVerification(kind){
   const isCustomer=kind==='customer';
@@ -1936,9 +1950,40 @@ async function josRefreshPortalSession(which){
       if(user.user_metadata?.account_type==='mitra'||p)await josShowRole(user,'mitra');
     }else{
       const userBrand=user.user_metadata?.app_brand||'JOS';
-      if(user.is_anonymous || !user.email || userBrand!=='JOS' || user.user_metadata?.account_type!=='customer'){
+      if(user.is_anonymous || !user.email || userBrand!=='JOS'){
         await josDb.auth.signOut();
         josPortalTab('customer');
+        return;
+      }
+      let resolvedRole=user.user_metadata?.account_type||'';
+      const isGoogle=(user.app_metadata?.provider==='google'||(user.app_metadata?.providers||[]).includes('google'));
+      // Akun Google baru tidak selalu memiliki account_type. Pastikan bukan akun mitra/admin sebelum menetapkannya sebagai pelanggan.
+      if(!resolvedRole && isGoogle){
+        const [{data:mitraRow,error:mitraErr},{data:adminRow,error:adminErr}]=await Promise.all([
+          josMitraDb.from('jos_mitra_profiles').select('id').eq('id',user.id).maybeSingle(),
+          josAdminDb.from('jos_admin_users').select('user_id').eq('user_id',user.id).maybeSingle()
+        ]);
+        if(mitraErr)throw mitraErr;
+        if(adminErr)throw adminErr;
+        if(adminRow){await josShowRole(user,'admin');return;}
+        if(mitraRow){await josShowRole(user,'mitra');return;}
+        const meta=user.user_metadata||{};
+        const {data:updateData,error:updateError}=await josDb.auth.updateUser({data:{
+          ...meta,
+          full_name:meta.full_name||meta.name||user.email.split('@')[0],
+          avatar_url:meta.avatar_url||meta.picture||null,
+          account_type:'customer',
+          app_brand:'JOS',
+          source_app:'JOS'
+        }});
+        if(updateError)throw updateError;
+        user=updateData.user||user;
+        resolvedRole=user.user_metadata?.account_type||'customer';
+      }
+      if(resolvedRole!=='customer'){
+        await josDb.auth.signOut();
+        josPortalTab('customer');
+        josMsg('josCustomerAuthMsg','Akun ini bukan akun pelanggan JOS.',true);
         return;
       }
       await josShowRole(user,'customer');
