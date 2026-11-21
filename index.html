@@ -2311,7 +2311,7 @@ josDb.auth.onAuthStateChange((event,session)=>{
   // Penjadwalan ini memberi kesempatan SDK menyelesaikan proses refresh token.
   setTimeout(()=>{
     if(josEl('josPortalOrders')?.classList.contains('open'))josLoadCustomerOrders();
-    if(josEl('josPortalCustomer')?.classList.contains('open') && session?.user){
+    if(session?.user && (josEl('josPortalCustomer')?.classList.contains('open') || session.user.app_metadata?.provider==='google' || (session.user.app_metadata?.providers||[]).includes('google'))){
       josRefreshPortalSession('customer');
     }
   },0);
