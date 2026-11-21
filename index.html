@@ -250,6 +250,8 @@ body.all-services-mode .section-head a{display:none!important}
 .jos-social-grid svg{width:42px;height:42px;filter:drop-shadow(0 3px 4px #163b5a20)}
 .jos-social-contact{margin-top:16px;color:#61778b;font-size:11px;font-weight:650}
 @media(min-width:520px){.jos-social-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+/* Label kategori Request di Beranda mengikuti nama layanan lengkap. */
+#categories button[data-filter="Request Jasa"] span:last-child{font-size:9px;line-height:1.15;max-width:92px;margin-left:auto;margin-right:auto;overflow-wrap:anywhere}
 </style>
 <style id="jos-db-portals">
 .portal-layer{display:none;position:fixed;inset:0;z-index:10050;background:#f4f8fb;overflow:auto;padding:18px 12px 100px}.portal-layer.open{display:block}.portal-wrap{max-width:760px;margin:0 auto}.portal-top{display:flex;align-items:center;gap:12px;margin:4px 0 18px}.portal-back{border:0;border-radius:12px;padding:10px 14px;background:#e7f2fa;color:#07569a;font-weight:800}.portal-card{background:#fff;border:1px solid #d7e6f1;border-radius:18px;padding:17px;margin:12px 0;box-shadow:0 5px 18px #123b7610}.portal-card h2,.portal-card h3{margin:0 0 8px;color:#07569a}.portal-card p{color:#617789;font-size:13px;line-height:1.5}.portal-card label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}.portal-card input,.portal-card textarea,.portal-card select{width:100%;padding:12px;border:1px solid #cbdce9;border-radius:11px;font:inherit;background:#fff}.portal-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0}.portal-actions button,.portal-submit{border:0;border-radius:12px;padding:12px;background:#087bd5;color:#fff;font-weight:800}.portal-actions button.active{background:#064c9a}.portal-submit{width:100%;margin-top:14px}.portal-msg{font-size:13px;padding:10px;border-radius:10px;background:#eef7ff;color:#07569a;margin-top:10px;white-space:pre-wrap}.portal-list{display:grid;gap:10px}.portal-item{border:1px solid #d8e7f2;border-radius:13px;padding:12px;background:#fff}.portal-item strong{color:#064c9a}.portal-item small{display:block;color:#64798a;margin-top:4px;line-height:1.45}.portal-item button{margin:8px 6px 0 0;border:0;border-radius:9px;padding:9px 11px;background:#087bd5;color:white;font-weight:700}.portal-item button.reject{background:#a63a3a}.portal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.primary:disabled{opacity:.65;cursor:wait}.hidden{display:none!important}
@@ -638,7 +640,7 @@ body.jos-order-open .bottom{display:none!important}
 <button class="cat" data-filter="Pindahan"><span class="cat-icon">🚚</span><span>Pindahan</span></button>
 <button class="cat" data-filter="Cleaning"><span class="cat-icon">🧹</span><span>Cleaning</span></button>
 <button class="cat" data-filter="Toren"><span class="cat-icon">🚿</span><span>Toren</span></button>
-<button class="cat" data-filter="Request Jasa"><span class="cat-icon">📝</span><span>Request</span></button>
+<button class="cat" data-filter="Request Jasa" aria-label="Layanan Request Jasa Sesuai Kebutuhan"><span class="cat-icon">📝</span><span>Layanan Request Jasa Sesuai Kebutuhan</span></button>
 <button class="cat" data-filter="Furniture"><span class="cat-icon">🛠️</span><span>Furniture</span></button>
 <button class="cat" data-filter="Supir"><span class="cat-icon">🚘</span><span>Supir</span></button>
 <button class="cat" data-filter="TKBM"><span class="cat-icon">📦</span><span>TKBM</span></button>
@@ -667,7 +669,7 @@ body.jos-order-open .bottom{display:none!important}
 <article class="service" data-category="Jasa Menguburkan Hewan Peliharaan" data-desc="Bantuan penguburan hewan peliharaan secara layak." data-detail="Isi jenis/ukuran hewan dan lokasi. Pilih tarif tetap sesuai pilihan layanan." data-emoji="🐾" data-name="Jasa Menguburkan Hewan Peliharaan"><div class="service-art">🐾</div><div class="service-info"><h3>Jasa Menguburkan Hewan Peliharaan</h3><p>Bantuan penguburan hewan peliharaan secara layak.</p><div class="service-bottom"><span class="price">Lihat detail</span><button aria-label="Lihat detail Jasa Menguburkan Hewan Peliharaan" class="add">+</button></div></div></article>
 <article class="service" data-category="Jasa Ari-Ari / Bali Pasca Lahiran" data-desc="Bantuan pengurusan ari-ari/bali pasca persalinan." data-detail="Jelaskan lokasi dan kebutuhan yang diperlukan. Pilih tarif tetap sesuai pilihan layanan." data-emoji="🌼" data-name="Jasa Ari-Ari / Bali Pasca Lahiran"><div class="service-art">🌼</div><div class="service-info"><h3>Jasa Ari-Ari / Bali Pasca Lahiran</h3><p>Bantuan pengurusan ari-ari/bali pasca persalinan.</p><div class="service-bottom"><span class="price">Lihat detail</span><button aria-label="Lihat detail Jasa Ari-Ari / Bali Pasca Lahiran" class="add">+</button></div></div></article>
 <article class="service" data-category="Pencarian &amp; Pembuangan Bangkai Tikus" data-desc="Bantuan mencari dan membuang bangkai tikus." data-detail="Jelaskan lokasi/area dan kondisi. Pilih tarif tetap sesuai pilihan layanan." data-emoji="🧤" data-name="Pencarian &amp; Pembuangan Bangkai Tikus"><div class="service-art">🧤</div><div class="service-info"><h3>Pencarian &amp; Pembuangan Bangkai Tikus</h3><p>Bantuan mencari dan membuang bangkai tikus.</p><div class="service-bottom"><span class="price">Lihat detail</span><button aria-label="Lihat detail Pencarian &amp; Pembuangan Bangkai Tikus" class="add">+</button></div></div></article>
-<article class="service" data-category="Request Jasa" data-desc="Ajukan jasa sesuai kebutuhan Anda dengan tarif tetap per mitra." data-detail="Pilih tarif jasa per mitra Rp100.000, Rp150.000, Rp200.000, Rp250.000, atau Rp300.000." data-emoji="📝" data-name="Request Jasa Sesuai Kebutuhan"><div class="service-art">📝</div><div class="service-info"><h3>Request Jasa Sesuai Kebutuhan</h3><p>Tuliskan jasa yang Anda butuhkan, tentukan tarif dan jumlah mitra.</p><div class="service-bottom"><span class="price">Mulai Rp100.000 / mitra</span><button aria-label="Request Jasa Sesuai Kebutuhan" class="add">+</button></div></div></article>
+<article class="service" data-category="Request Jasa" data-desc="Ajukan layanan jasa sesuai kebutuhan Anda." data-detail="Tuliskan kebutuhan jasa Anda agar admin dapat menindaklanjuti permintaan." data-emoji="📝" data-name="Layanan Request Jasa Sesuai Kebutuhan"><div class="service-art">📝</div><div class="service-info"><h3>Layanan Request Jasa Sesuai Kebutuhan</h3><p>Tuliskan jasa yang Anda butuhkan sesuai kebutuhan.</p><div class="service-bottom"><span class="price">Mulai Rp100.000 / mitra</span><button aria-label="Layanan Request Jasa Sesuai Kebutuhan" class="add">+</button></div></div></article>
 </section>
 <div class="empty" id="empty">Layanan tidak ditemukan.</div>
 <section class="trust">
@@ -964,7 +966,7 @@ const JOS_SERVICE_OPTIONS={
 'Jasa Menguburkan Hewan Peliharaan':['Hamster / kelinci kecil — Rp150.000','Kucing / anjing kecil — Rp200.000','Anjing ukuran sedang — Rp300.000','Anjing besar — Rp300.000'],
 'Jasa Ari-Ari / Bali Pasca Lahiran':['Penguburan ari-ari dekat lokasi — Rp150.000','Persiapan sederhana — Rp200.000','Lokasi jauh — Rp250.000'],
 'Pencarian & Pembuangan Bangkai Tikus':['Lokasi mudah dijangkau — Rp150.000','Lokasi sulit dijangkau — Rp200.000','Plafon / lokasi tersembunyi — Rp250.000','Penanganan khusus — Rp300.000'],
-'Request Jasa Sesuai Kebutuhan':['Tarif jasa — Rp100.000 per mitra','Tarif jasa — Rp150.000 per mitra','Tarif jasa — Rp200.000 per mitra','Tarif jasa — Rp250.000 per mitra','Tarif jasa — Rp300.000 per mitra']
+'Layanan Request Jasa Sesuai Kebutuhan':['Tarif jasa — Rp100.000 per mitra','Tarif jasa — Rp150.000 per mitra','Tarif jasa — Rp200.000 per mitra','Tarif jasa — Rp250.000 per mitra','Tarif jasa — Rp300.000 per mitra']
 };
 function josMovingOptions(){
  const today=new Date();
@@ -1003,7 +1005,7 @@ function openSheet(card){
  choices.innerHTML='';choices.hidden=true;toggle.setAttribute('aria-expanded','false');
  toggle.firstChild.textContent='Pilih paket / detail layanan';
  const isMoving=serviceName==='Pindahan & Angkut Barang';
- const isRequest=serviceName==='Request Jasa Sesuai Kebutuhan';
+ const isRequest=serviceName==='Layanan Request Jasa Sesuai Kebutuhan';
  const requestFields=document.getElementById('josRequestServiceFields');
  if(requestFields){requestFields.hidden=!isRequest;document.getElementById('josRequestServiceText').value='';}
  const movingAddons=document.getElementById('movingAddons');
@@ -1058,7 +1060,7 @@ function openSheet(card){
  document.getElementById('overlay').classList.add('show');
 }
 function openCustomService(rawName){
- const requestCard=cards.find(c=>c.dataset.name==='Request Jasa Sesuai Kebutuhan');
+ const requestCard=cards.find(c=>c.dataset.name==='Layanan Request Jasa Sesuai Kebutuhan');
  if(requestCard){openSheet(requestCard);if(rawName){const field=document.getElementById('josRequestServiceText');field.value=rawName;field.focus();}}
 }
 
@@ -1066,7 +1068,7 @@ document.getElementById('josRequestServiceText')?.addEventListener('input',()=>{
  const field=document.getElementById('josRequestServiceText');
  const current=document.getElementById('serviceDetail').value||'';
  const priceMatch=current.match(/Tarif jasa — Rp[\d.]+ per mitra/);
- if(selectedService?.dataset?.name==='Request Jasa Sesuai Kebutuhan'&&priceMatch){
+ if(selectedService?.dataset?.name==='Layanan Request Jasa Sesuai Kebutuhan'&&priceMatch){
   const value=field.value.trim();
   document.getElementById('serviceDetail').value=priceMatch[0]+' | Permintaan pelanggan: '+value;
   document.getElementById('selectedChoiceSummary').textContent='Permintaan: '+value+' | Tarif: '+priceMatch[0];
@@ -1394,6 +1396,7 @@ document.querySelectorAll('.cat').forEach(btn=>btn.addEventListener('click',()=>
     Pindahan:'Pindahan & Angkut Barang',
     Cleaning:'Cleaning Service',
     Toren:'Cuci Toren Air',
+    Request:'Layanan Request Jasa Sesuai Kebutuhan',
     Taman:'Taman & Landscaping',
     Furniture:'Perbaikan Perabot',
     Supir:'Jasa Supir',
@@ -1442,7 +1445,7 @@ function setJosPageStatus(label){const el=document.getElementById('josPageStatus
 document.querySelectorAll('.nav').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));btn.classList.add('active');setJosPageStatus(btn.dataset.nav||btn.textContent.trim())}));
 document.querySelector('.nav[data-nav="Beranda"]')?.addEventListener('click',showHome);
 document.querySelectorAll('[data-drawer]').forEach(btn=>btn.addEventListener('click',()=>{const names={home:'Beranda',services:'Layanan',orders:'Pesanan',account:'Akun',mitra:'Portal Mitra',admin:'Portal Admin'};setJosPageStatus(names[btn.dataset.drawer]||'Beranda')}));
-document.querySelectorAll('.cat').forEach(btn=>btn.addEventListener('click',()=>setJosPageStatus(btn.textContent.trim())));
+/* Kategori Beranda tidak mengganti judul halaman; Request membuka formulir langsung. */
 
 </script>
 
