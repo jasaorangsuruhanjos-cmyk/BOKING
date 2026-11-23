@@ -6,7 +6,7 @@
         android:label="JOS"
         android:icon="@drawable/ic_jos"
         android:roundIcon="@drawable/ic_jos"
-        android:theme="@style/AppTheme"
+        android:theme="@style/LaunchTheme"
         android:usesCleartextTraffic="false">
         <activity
             android:name=".MainActivity"

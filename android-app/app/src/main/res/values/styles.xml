@@ -8,4 +8,5 @@
         <item name="android:windowLightNavigationBar">true</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
+    <style name="LaunchTheme" parent="@style/AppTheme" />
 </resources>
