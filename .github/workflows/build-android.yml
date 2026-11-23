@@ -1,0 +1,310 @@
+name: Build JOS Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "manifest.json"
+      - "service-worker.js"
+      - "package.json"
+      - "package-lock.json"
+      - "capacitor.config.json"
+      - ".github/workflows/build-android.yml"
+      - "jos-icon-*.png"
+      - "resources/**"
+      - "android-branding/**"
+      - "www/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: jos-android-production-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout production
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Package customer website
+        run: |
+          set -euo pipefail
+          mkdir -p www
+          cp index.html www/index.html
+          cp manifest.json service-worker.js jos-icon-192.png jos-icon-512.png www/
+
+      - name: Install Capacitor
+        run: npm install
+
+      - name: Generate Android project
+        run: npx cap add android
+
+      - name: Configure native deep link callback
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path("android/app/src/main/AndroidManifest.xml")
+          s=p.read_text()
+          marker='android:scheme="josapp"'
+          if marker not in s:
+              intent='''<intent-filter>
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="josapp" android:host="auth" android:path="/callback" />
+                      </intent-filter>'''
+              pos=s.find('</activity>')
+              if pos < 0: raise SystemExit("MainActivity closing tag not found")
+              s=s[:pos]+intent+s[pos:]
+          activity=None
+          for match in re.finditer(r'<activity[^>]*>',s):
+              if 'MainActivity' in match.group(0):
+                  activity=match
+                  break
+          if activity is None:
+              raise SystemExit("MainActivity declaration not found")
+          if 'android:launchMode=' not in activity.group(0):
+              s=s[:activity.end()-1]+' android:launchMode="singleTask"'+s[activity.end()-1:]
+          p.write_text(s)
+          PY
+
+      - name: Decode the two approved JOS Android images
+        run: |
+          set -euo pipefail
+          mkdir -p assets
+          cat android-branding/icon-512/*.b64 | tr -d '\r\n[:space:]' | base64 --decode > /tmp/jos-app-icon.webp
+          cat android-branding/splash-768/*.b64 | tr -d '\r\n[:space:]' | base64 --decode > /tmp/jos-splash.webp
+          python3 -m pip install --quiet Pillow
+          python3 - <<'PY'
+          from PIL import Image
+          from collections import deque
+          from pathlib import Path
+
+          icon_src=Image.open('/tmp/jos-app-icon.webp').convert('RGBA')
+          splash_src=Image.open('/tmp/jos-splash.webp').convert('RGBA')
+          icon_src.load(); splash_src.load()
+          if icon_src.size != (512,512):
+              raise SystemExit(f'Wrong launcher source dimensions: {icon_src.size}')
+          if splash_src.size != (768,768):
+              raise SystemExit(f'Wrong splash source dimensions: {splash_src.size}')
+
+          # Keep the entire first image and its square canvas. Remove only the
+          # black matte connected to the outer corners so Android can mask the
+          # rounded white tile cleanly; the logo artwork itself is untouched.
+          px=icon_src.load()
+          w,h=icon_src.size
+          q=deque([(0,0),(w-1,0),(0,h-1),(w-1,h-1)])
+          seen=set()
+          while q:
+              x,y=q.popleft()
+              if (x,y) in seen or x<0 or y<0 or x>=w or y>=h: continue
+              seen.add((x,y))
+              r,g,b,a=px[x,y]
+              if max(r,g,b) <= 48:
+                  px[x,y]=(r,g,b,0)
+                  q.extend(((x-1,y),(x+1,y),(x,y-1),(x,y+1)))
+
+          # Native launcher sources: same square composition, no crop/stretch.
+          icon_1024=icon_src.resize((1024,1024),Image.Resampling.LANCZOS)
+          icon_1024.save('assets/icon.png',format='PNG',optimize=True)
+          icon_1024.save('assets/icon-only.png',format='PNG',optimize=True)
+          foreground=Image.new('RGBA',(1024,1024),(0,0,0,0))
+          safe=icon_src.resize((760,760),Image.Resampling.LANCZOS)
+          foreground.alpha_composite(safe,((1024-760)//2,(1024-760)//2))
+          foreground.save('assets/icon-foreground.png',format='PNG',optimize=True)
+          Image.new('RGBA',(1024,1024),(255,255,255,255)).save(
+              'assets/icon-background.png',format='PNG',optimize=True)
+
+          # Native splash source is the user's SECOND image. Preserve its whole
+          # 1:1 white canvas and centered artwork. Only raster resolution changes.
+          splash_2732=splash_src.resize((2732,2732),Image.Resampling.LANCZOS)
+          splash_2732.save('assets/splash.png',format='PNG',optimize=True)
+          splash_2732.save('assets/splash-dark.png',format='PNG',optimize=True)
+          print('Approved launcher image:',icon_src.size,'-> Android icon')
+          print('Approved second image:',splash_src.size,'-> uncropped white splash')
+          PY
+          npx capacitor-assets generate --android
+
+      - name: Sync native project
+        run: npx cap sync android
+
+      - name: Preserve the exact square splash artwork on every Android screen size
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          source=Image.open('/tmp/jos-splash.webp').convert('RGBA')
+          source.load()
+          root=Path('android/app/src/main/res')
+          targets=sorted(root.glob('drawable*/splash.png'))
+          if not targets:
+              raise SystemExit('Capacitor did not generate Android splash resources')
+          for target in targets:
+              with Image.open(target) as current:
+                  width,height=current.size
+              side=min(width,height)
+              square=source.resize((side,side),Image.Resampling.LANCZOS)
+              canvas=Image.new('RGBA',(width,height),(255,255,255,255))
+              canvas.alpha_composite(square,((width-side)//2,(height-side)//2))
+              canvas.save(target,format='PNG',optimize=True)
+          print(f'Preserved full square second image in {len(targets)} portrait/landscape/night splash resources.')
+          PY
+
+      - name: Force approved JOS launcher icons into Android resources
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          import re
+          source=Image.open('assets/icon-only.png').convert('RGBA')
+          foreground_source=Image.open('assets/icon-foreground.png').convert('RGBA')
+          root=Path('android/app/src/main/res')
+          sizes={'mipmap-mdpi':48,'mipmap-hdpi':72,'mipmap-xhdpi':96,'mipmap-xxhdpi':144,'mipmap-xxxhdpi':192}
+          for folder,size in sizes.items():
+              d=root/folder; d.mkdir(parents=True,exist_ok=True)
+              icon=source.resize((size,size),Image.Resampling.LANCZOS)
+              icon.save(d/'ic_launcher.png',optimize=True)
+              icon.save(d/'ic_launcher_round.png',optimize=True)
+              fg=foreground_source.resize((size,size),Image.Resampling.LANCZOS)
+              fg.save(d/'ic_launcher_foreground.png',optimize=True)
+          values=root/'values'; values.mkdir(parents=True,exist_ok=True)
+          (values/'jos_launcher_colors.xml').write_text(
+              '<resources><color name="jos_launcher_background">#FFFFFF</color></resources>')
+          manifest=Path('android/app/src/main/AndroidManifest.xml')
+          text=manifest.read_text()
+          start=text.find('<application')
+          end=text.find('>',start)
+          if start < 0 or end < 0: raise SystemExit("Android application tag not found")
+          tag=text[start:end+1]
+          tag=re.sub(r'android:icon="[^"]+"','',tag)
+          tag=re.sub(r'android:roundIcon="[^"]+"','',tag)
+          tag=tag[:-1]+' android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round">'
+          manifest.write_text(text[:start]+tag+text[end+1:])
+          adaptive=root/'mipmap-anydpi-v26'; adaptive.mkdir(parents=True,exist_ok=True)
+          xml='''<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/jos_launcher_background"/><foreground android:drawable="@mipmap/ic_launcher_foreground"/></adaptive-icon>'''
+          (adaptive/'ic_launcher.xml').write_text(xml)
+          (adaptive/'ic_launcher_round.xml').write_text(xml)
+          print("Android manifest points to the approved JOS launcher assets.")
+          PY
+
+      - name: Verify generated Android branding assets
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageChops
+          root=Path('android/app/src/main/res')
+          candidates=list(root.glob('mipmap*/ic_launcher*.png'))+list(root.glob('drawable*/splash*.png'))
+          if not candidates:
+              raise SystemExit("No generated launcher/splash assets found")
+          for p in candidates:
+              im=Image.open(p).convert('RGBA')
+              im.load()
+              if im.width < 24 or im.height < 24:
+                  raise SystemExit(f"Generated asset invalid: {p} {im.size}")
+          if not (root/'mipmap-mdpi/ic_launcher.png').exists():
+              raise SystemExit("Launcher icon missing")
+          print(f"Verified {len(candidates)} Android launcher/splash PNG assets")
+          PY
+
+      - name: Verify packaged web app
+        run: |
+          test -s www/index.html
+          grep -q "Jasa Orang Suruhan" www/index.html
+          test "$(wc -c < www/index.html)" -gt 500000
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Inspect and verify the APK package, signature, icon, and splash
+        run: |
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          ls -lh "$APK"
+          unzip -tq "$APK"
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          test -n "$SDK"
+          APKSIGNER="$(find "$SDK/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          AAPT="$(find "$SDK/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
+          test -x "$AAPT"
+          "$APKSIGNER" verify --verbose "$APK"
+          "$AAPT" dump badging "$APK" | tee /tmp/jos-apk-badging.txt
+          grep -Fq "package: name='id.jos.pelanggan'" /tmp/jos-apk-badging.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageChops
+          from io import BytesIO
+          import zipfile
+
+          apk=Path('android/app/build/outputs/apk/debug/app-debug.apk')
+          with zipfile.ZipFile(apk) as z:
+              bad=z.testzip()
+              if bad: raise SystemExit(f'Corrupt APK ZIP entry: {bad}')
+              names=z.namelist()
+              required=[
+                'AndroidManifest.xml',
+                'classes.dex',
+                'res/mipmap-xxxhdpi-v4/ic_launcher.png',
+                'res/mipmap-xxxhdpi-v4/ic_launcher_foreground.png',
+                'res/mipmap-anydpi-v26/ic_launcher.xml',
+                'res/drawable-port-xxxhdpi-v4/splash.png'
+              ]
+              for name in required:
+                  if name not in names: raise SystemExit(f'Missing APK resource: {name}')
+              actual_icon=Image.open(BytesIO(z.read('res/mipmap-xxxhdpi-v4/ic_launcher.png'))).convert('RGBA')
+              expected_icon=Image.open('assets/icon-only.png').convert('RGBA').resize((192,192),Image.Resampling.LANCZOS)
+              if ImageChops.difference(actual_icon,expected_icon).getbbox():
+                  raise SystemExit('APK launcher icon does not match the supplied first image')
+              actual_splash=Image.open(BytesIO(z.read('res/drawable-port-xxxhdpi-v4/splash.png'))).convert('RGBA')
+              source=Image.open('/tmp/jos-splash.webp').convert('RGBA')
+              w,h=actual_splash.size
+              side=min(w,h)
+              square=source.resize((side,side),Image.Resampling.LANCZOS)
+              expected=Image.new('RGBA',(w,h),(255,255,255,255))
+              expected.alpha_composite(square,((w-side)//2,(h-side)//2))
+              if ImageChops.difference(actual_splash,expected).getbbox():
+                  raise SystemExit('APK splash does not preserve the supplied second square image')
+              print('APK package integrity: OK')
+              print('Launcher icon: exact match to supplied first image (Android sizes rasterized only)')
+              print('Splash screen: exact square image centered on white; no crop or fill scaling')
+          PY
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jos-pelanggan-production-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish direct APK download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: production-latest
+          name: JOS Pelanggan Android (Production)
+          prerelease: true
+          make_latest: false
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+          overwrite_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
