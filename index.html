@@ -1627,6 +1627,17 @@ async function josCustomerSubmit(e){
 }
 josEl('josCustomerAuthForm').onsubmit=josCustomerSubmit;
 
+function josCustomerGooglePhoto(user){
+ const meta=user?.user_metadata||{};
+ const googleIdentity=(user?.identities||[]).find(identity=>identity.provider==='google');
+ const identityData=googleIdentity?.identity_data||{};
+ const candidates=[
+  meta.picture,meta.avatar_url,meta.profile_image,meta.photo_url,
+  identityData.picture,identityData.avatar_url,identityData.profile_image
+ ];
+ return candidates.find(value=>typeof value==='string'&&/^https:\/\//i.test(value))||'';
+}
+
 async function josResolveGoogleCustomer(user){
  if(!user || user.is_anonymous || !user.email) return null;
  const app=user.app_metadata||{},meta=user.user_metadata||{};
@@ -1635,7 +1646,17 @@ async function josResolveGoogleCustomer(user){
  // Hormati pemisahan akun: role/brand yang sudah ada tidak boleh diubah.
  if(meta.app_brand && meta.app_brand!=='JOS') return null;
  const currentRole=meta.account_type||'';
- if(currentRole==='customer') return user;
+ if(currentRole==='customer'){
+  // Akun pelanggan lama sering sudah ber-role customer, tetapi foto Google
+  // masih berada di identity_data.picture dan belum disalin ke avatar_url.
+  const googlePhoto=josCustomerGooglePhoto(user);
+  if(googlePhoto && meta.avatar_url!==googlePhoto){
+   const {data,error}=await josDb.auth.updateUser({data:{avatar_url:googlePhoto}});
+   if(error)throw error;
+   return data.user||user;
+  }
+  return user;
+ }
  if(currentRole && currentRole!=='customer') return null;
  // Google OAuth yang belum memiliki metadata role dianggap pendaftaran pelanggan baru.
  // Hindari query tabel admin/mitra dari sesi pelanggan karena RLS dapat menolak SELECT.
@@ -1958,7 +1979,13 @@ async function josLoadCustomerProfile(user){
  josEl('josCustomerViewAddress').textContent=address;
  josEl('josCustomerViewWA').textContent=phone;
  josEl('josCustomerViewEmail').textContent=email;
- josEl('josCustomerAvatarPreview').src=m.avatar_url||josEl('josCustomerAvatarPreview').src;
+ const avatarEl=josEl('josCustomerAvatarPreview');
+ const googlePhoto=josCustomerGooglePhoto(user);
+ const avatarFallback="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='60' fill='%23e8f4fc'/%3E%3Ccircle cx='60' cy='43' r='22' fill='%238bb8d8'/%3E%3Cpath d='M20 112c4-25 19-38 40-38s36 13 40 38' fill='%238bb8d8'/%3E%3C/svg%3E";
+ avatarEl.onerror=function(){this.onerror=null;this.src=avatarFallback;this.alt='';};
+ avatarEl.referrerPolicy='no-referrer';
+ avatarEl.src=googlePhoto||avatarFallback;
+ avatarEl.alt=googlePhoto?'Foto profil pelanggan':'';
  josEl('josCustomerProfileView').classList.remove('hidden');
  josEl('josCustomerProfileForm').classList.add('hidden');
  josEl('josCustomerProfileMsg').textContent='';
