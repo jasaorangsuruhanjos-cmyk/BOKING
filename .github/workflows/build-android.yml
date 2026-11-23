@@ -229,23 +229,23 @@ jobs:
           s=p.read_text()
           if 'windowSplashScreenAnimatedIcon' in s:
               s=re.sub(
-                  r'(<item\\s+name=["\\']android:windowSplashScreenAnimatedIcon["\\']\\s*>).*?(</item>)',
-                  r'\\1@android:color/transparent\\2',
+                  r"(<item\s+name=['\"]android:windowSplashScreenAnimatedIcon['\"]\s*>).*?(</item>)",
+                  r"\1@android:color/transparent\2",
                   s,
                   flags=re.S
               )
           else:
               # Add the transparent icon to the generated launch theme only.
-              m=re.search(r'(<style\\b[^>]*name=["\\'][^"\\']*Launch[^"\\']*["\\'][^>]*>)',s)
+              m=re.search(r"(<style\b[^>]*name=['\"][^'\"]*Launch[^'\"]*['\"][^>]*>)",s)
               if not m:
                   raise SystemExit('Could not identify Android launch theme in values-v31/styles.xml')
-              s=s[:m.end()]+'\\n        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>\\n        <item name="android:windowSplashScreenBackground">#FFFFFF</item>'+s[m.end():]
+              s=s[:m.end()]+'\n        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>\n        <item name="android:windowSplashScreenBackground">#FFFFFF</item>'+s[m.end():]
           # Force white system background so the transition to the single large
           # web splash is visually clean and contains no duplicate logo.
           if 'windowSplashScreenBackground' in s:
               s=re.sub(
-                  r'(<item\\s+name=["\\']android:windowSplashScreenBackground["\\']\\s*>).*?(</item>)',
-                  r'\\1#FFFFFF\\2',
+                  r"(<item\s+name=['\"]android:windowSplashScreenBackground['\"]\s*>).*?(</item>)",
+                  r"\1#FFFFFF\2",
                   s,
                   flags=re.S
               )
