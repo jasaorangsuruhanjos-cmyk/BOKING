@@ -32,7 +32,7 @@ public class MainActivity extends Activity {
         root.setBackgroundColor(Color.WHITE);
 
         splashView = new ImageView(this);
-        splashView.setImageResource(R.drawable.jos_pwa_splash);
+        splashView.setImageResource(R.drawable.jos_pwa_splash_new);
         splashView.setScaleType(ImageView.ScaleType.FIT_CENTER);
         splashView.setBackgroundColor(Color.WHITE);
         root.addView(splashView, new FrameLayout.LayoutParams(
