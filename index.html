@@ -1678,17 +1678,15 @@ async function josCustomerGoogleSignIn(){
  try{
   josEl('josCustomerGoogleLogin').disabled=true;
   josMsg('josCustomerAuthMsg','Menghubungkan ke Google...');
-  const native=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
-  if(native){
-   const plugins=window.Capacitor.Plugins||{};
-   if(!plugins.Browser||!plugins.App)throw Error('Komponen login Android belum siap. Perbarui aplikasi JOS.');
+  // APK Android WebView: OAuth dibuka di browser sistem, callback kembali ke APK.
+  if(window.JosAndroid && typeof window.JosAndroid.openGoogleAuth==='function'){
    const {data,error}=await josDb.auth.signInWithOAuth({
     provider:'google',
     options:{redirectTo:'josapp://auth/callback',skipBrowserRedirect:true}
    });
    if(error)throw error;
    if(!data?.url)throw Error('Alamat login Google tidak diterima dari server.');
-   await plugins.Browser.open({url:data.url});
+   window.JosAndroid.openGoogleAuth(data.url);
    return;
   }
   const {error}=await josDb.auth.signInWithOAuth({
