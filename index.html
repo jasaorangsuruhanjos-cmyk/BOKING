@@ -1635,7 +1635,19 @@ async function josResolveGoogleCustomer(user){
  // Hormati pemisahan akun: role/brand yang sudah ada tidak boleh diubah.
  if(meta.app_brand && meta.app_brand!=='JOS') return null;
  const currentRole=meta.account_type||'';
- if(currentRole==='customer') return user;
+ if(currentRole==='customer'){
+  // Akun Google pelanggan lama mungkin sudah ber-role customer tetapi foto
+  // belum tersalin ke avatar_url. Ambil foto dari metadata Google (picture).
+  if(!meta.avatar_url && (meta.picture||meta.profile_image)){
+   const {data,error}=await josDb.auth.updateUser({data:{
+    ...meta,
+    avatar_url:meta.picture||meta.profile_image
+   }});
+   if(error) throw error;
+   return data.user||user;
+  }
+  return user;
+ }
  if(currentRole && currentRole!=='customer') return null;
  // Google OAuth yang belum memiliki metadata role dianggap pendaftaran pelanggan baru.
  // Hindari query tabel admin/mitra dari sesi pelanggan karena RLS dapat menolak SELECT.
@@ -1959,7 +1971,23 @@ async function josLoadCustomerProfile(user){
  josEl('josCustomerViewAddress').textContent=address;
  josEl('josCustomerViewWA').textContent=phone;
  josEl('josCustomerViewEmail').textContent=email;
- josEl('josCustomerAvatarPreview').src=m.avatar_url||josEl('josCustomerAvatarPreview').src;
+ // Google biasanya mengirim foto pada metadata "picture"; akun lama bisa
+ // belum memiliki avatar_url. Utamakan foto Google jika tersedia.
+ const avatar=josEl('josCustomerAvatarPreview');
+ const avatarUrl=m.picture||m.avatar_url||m.profile_image||m.photo_url||'';
+ if(avatarUrl){
+  avatar.onerror=function(){
+   this.onerror=null;
+   this.removeAttribute('src');
+   this.src='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"%3E%3Crect width="120" height="120" rx="60" fill="%23e8f4fc"/%3E%3Ccircle cx="60" cy="43" r="22" fill="%238bb8d8"/%3E%3Cpath d="M20 112c4-25 19-38 40-38s36 13 40 38" fill="%238bb8d8"/%3E%3C/svg%3E';
+   this.alt='';
+  };
+  avatar.src=avatarUrl;
+ }else{
+  avatar.onerror=null;
+  avatar.src='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"%3E%3Crect width="120" height="120" rx="60" fill="%23e8f4fc"/%3E%3Ccircle cx="60" cy="43" r="22" fill="%238bb8d8"/%3E%3Cpath d="M20 112c4-25 19-38 40-38s36 13 40 38" fill="%238bb8d8"/%3E%3C/svg%3E';
+  avatar.alt='';
+ }
  josEl('josCustomerProfileView').classList.remove('hidden');
  josEl('josCustomerProfileForm').classList.add('hidden');
  josEl('josCustomerProfileMsg').textContent='';
