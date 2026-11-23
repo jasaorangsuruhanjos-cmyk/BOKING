@@ -2526,43 +2526,7 @@ josDb.auth.onAuthStateChange((event,session)=>{
 // Aplikasi tidak membuat sesi Guest otomatis saat dibuka.
 </script>
 
-<style id="jos-order-modal-click-fix">
-/* Pastikan formulir pesanan selalu berada di lapisan teratas dan dapat menerima sentuhan. */
-#overlay{z-index:10020!important;pointer-events:none}
-#overlay.show{display:flex!important;pointer-events:auto}
-#overlay .sheet{pointer-events:auto;position:relative;z-index:1}
-#cards .service{cursor:pointer;pointer-events:auto;touch-action:manipulation}
-#cards .service .add{pointer-events:auto;position:relative;z-index:2}
-</style>
-<script id="jos-order-modal-delegated-fix">
-// Delegasi klik kategori dan kartu layanan agar sentuhan tetap ditangani.
-document.addEventListener('click',function(event){
-  const category=event.target.closest('#categories .cat');
-  if(category){
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    const key=category.dataset.filter;
-    if(key==='Lainnya'){showAll();return;}
-    const targets={Pindahan:'Pindahan & Angkut Barang',Cleaning:'Cleaning Service',Toren:'Cuci Toren Air','Request Jasa':'Layanan Request Jasa Sesuai Kebutuhan',Request:'Layanan Request Jasa Sesuai Kebutuhan',Taman:'Taman & Landscaping',Furniture:'Perbaikan Perabot',Supir:'Jasa Supir',TKBM:'Bongkar Muat / TKBM'};
-    const target=cards.find(card=>card.dataset.name===targets[key]);
-    if(target){document.querySelectorAll('.cat').forEach(x=>x.classList.remove('active'));category.classList.add('active');openSheet(target);}
-    else showAll();
-    return;
-  }
-  const card=event.target.closest('#cards .service');
-  if(!card)return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  if(typeof openSheet==='function'){
-    try{openSheet(card);}
-    catch(error){console.error('Gagal membuka formulir pesanan JOS:',error);if(typeof toast==='function')toast('Formulir layanan gagal dibuka. Silakan coba lagi.');}
-  }
-},true);
-// Tutup formulir saat tombol tutup ditekan atau area gelap disentuh.
-document.getElementById('overlay')?.addEventListener('click',function(event){
-  if(event.target===this)closeSheet();
-});
-</script>
+
 <!-- JOS PWA: daftarkan service worker agar aplikasi dapat dipasang di Android -->
 <script>
 (function () {
