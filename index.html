@@ -2098,9 +2098,20 @@ async function josShowRole(user,role){
 async function josRefreshPortalSession(which){
   try{
     const roleDb=which==='admin'?josAdminDb:which==='mitra'?josMitraDb:josDb;
-    const {data,error}=await roleDb.auth.getSession();if(error)throw error;
-    const session=data.session;if(!session)return;
-    const user=session.user;
+    // Tunggu pemulihan sesi lokal Supabase selesai sebelum menyimpulkan pelanggan logout.
+    let session=null;
+    for(let attempt=0;attempt<5;attempt++){
+      const {data,error}=await roleDb.auth.getSession();
+      if(error)throw error;
+      session=data?.session||null;
+      if(session)break;
+      if(attempt<4)await new Promise(resolve=>setTimeout(resolve,250));
+    }
+    if(!session){
+      if(which==='customer')josMsg('josCustomerAuthMsg','');
+      return;
+    }
+    let user=session.user;
     if(which==='admin'){
       const {data:row,error:roleErr}=await josAdminDb.from('jos_admin_users').select('user_id').eq('user_id',user.id).maybeSingle();
       if(roleErr)throw roleErr;
@@ -2112,9 +2123,18 @@ async function josRefreshPortalSession(which){
       if(user.user_metadata?.account_type==='mitra'||p)await josShowRole(user,'mitra');
     }else{
       const userBrand=user.user_metadata?.app_brand||'JOS';
-      if(user.is_anonymous || !user.email || userBrand!=='JOS' || user.user_metadata?.account_type!=='customer'){
+      if(user.is_anonymous || !user.email || userBrand!=='JOS'){
         await josDb.auth.signOut();
         josPortalTab('customer');
+        return;
+      }
+      if(user.user_metadata?.account_type!=='customer'){
+        const resolved=await josResolveGoogleCustomer(user);
+        if(resolved)user=resolved;
+      }
+      if(user.user_metadata?.account_type!=='customer'){
+        josPortalTab('customer');
+        josMsg('josCustomerAuthMsg','Sesi Google ditemukan, tetapi akun belum dikenali sebagai pelanggan JOS. Silakan hubungi Admin JOS.',true);
         return;
       }
       await josShowRole(user,'customer');
