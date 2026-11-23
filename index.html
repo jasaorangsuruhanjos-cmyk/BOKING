@@ -617,6 +617,17 @@ body.jos-order-open .bottom{display:none!important}
 @media(max-width:420px){.affiliate-form-grid{grid-template-columns:1fr}}
 </style>
 
+<script id="jos-native-app-mode">
+(function(){
+ const native=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
+ if(native){
+  document.documentElement.classList.add('jos-native-app');
+  const style=document.createElement('style');
+  style.textContent='#josInstallBanner,#josInstalledOpenPopup{display:none!important;visibility:hidden!important;pointer-events:none!important}';
+  document.head.appendChild(style);
+ }
+})();
+</script>
 </head>
 <body>
 <div class="app">
@@ -1488,11 +1499,11 @@ const josDb=window.supabase.createClient(
 // Setiap peran memakai client dan penyimpanan sesi yang benar-benar terpisah.
 const josMitraDb=window.supabase.createClient(
   'https://aqhfkcdglfijdtsgyzmq.supabase.co','sb_publishable_Ymh1RsVe9Ba9No27l58jGA_hpD04lSw',
-  {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'jos-mitra-auth'}}
+  {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'jos-mitra-auth'}}
 );
 const josAdminDb=window.supabase.createClient(
   'https://aqhfkcdglfijdtsgyzmq.supabase.co','sb_publishable_Ymh1RsVe9Ba9No27l58jGA_hpD04lSw',
-  {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'jos-admin-auth'}}
+  {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'jos-admin-auth'}}
 );
 
 const JOS_AFFILIATE_REF_KEY='jos_affiliate_referral_code';
@@ -1621,40 +1632,131 @@ async function josResolveGoogleCustomer(user){
  const app=user.app_metadata||{},meta=user.user_metadata||{};
  const isGoogle=app.provider==='google'||(app.providers||[]).includes('google')||(user.identities||[]).some(identity=>identity.provider==='google');
  if(!isGoogle) return null;
+ // Hormati pemisahan akun: role/brand yang sudah ada tidak boleh diubah.
  if(meta.app_brand && meta.app_brand!=='JOS') return null;
  const currentRole=meta.account_type||'';
  if(currentRole==='customer') return user;
  if(currentRole && currentRole!=='customer') return null;
- const {data,error}=await josDb.auth.updateUser({data:{...meta,full_name:meta.full_name||meta.name||user.email.split('@')[0],avatar_url:meta.avatar_url||meta.picture||null,account_type:'customer',app_brand:'JOS',source_app:'JOS'}});
+ // Google OAuth yang belum memiliki metadata role dianggap pendaftaran pelanggan baru.
+ // Hindari query tabel admin/mitra dari sesi pelanggan karena RLS dapat menolak SELECT.
+ const {data,error}=await josDb.auth.updateUser({data:{
+  ...meta,
+  full_name:meta.full_name||meta.name||user.email.split('@')[0],
+  avatar_url:meta.avatar_url||meta.picture||null,
+  account_type:'customer',
+  app_brand:'JOS',
+  source_app:'JOS'
+ }});
  if(error) throw error;
  return data.user||user;
 }
+
 async function josCustomerGoogleSignIn(){
  try{
-  const btn=josEl('josCustomerGoogleLogin');btn.disabled=true;josMsg('josCustomerAuthMsg','Menghubungkan ke Google...');
-  const {error}=await josDb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname+'#akun'}});
+  josEl('josCustomerGoogleLogin').disabled=true;
+  josMsg('josCustomerAuthMsg','Menghubungkan ke Google...');
+  const native=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
+  if(native){
+   const plugins=window.Capacitor.Plugins||{};
+   if(!plugins.Browser||!plugins.App)throw Error('Komponen login Android belum siap. Perbarui aplikasi JOS.');
+   const {data,error}=await josDb.auth.signInWithOAuth({
+    provider:'google',
+    options:{redirectTo:'josapp://auth/callback',skipBrowserRedirect:true}
+   });
+   if(error)throw error;
+   if(!data?.url)throw Error('Alamat login Google tidak diterima dari server.');
+   await plugins.Browser.open({url:data.url});
+   return;
+  }
+  const {error}=await josDb.auth.signInWithOAuth({
+   provider:'google',
+   options:{redirectTo:location.origin+location.pathname+'#akun'}
+  });
   if(error)throw error;
- }catch(err){josMsg('josCustomerAuthMsg','Login Google gagal: '+(err.message||'Silakan coba lagi.'),true);josEl('josCustomerGoogleLogin').disabled=false;}
+ }catch(err){
+  josMsg('josCustomerAuthMsg','Login Google gagal: '+(err.message||'Silakan coba lagi.'),true);
+  josEl('josCustomerGoogleLogin').disabled=false;
+ }
 }
 josEl('josCustomerGoogleLogin').onclick=josCustomerGoogleSignIn;
-let josGoogleOAuthCompleting=!!(new URLSearchParams(location.search).has('code') || /(?:^|[&#])access_token=/.test(location.hash));
-(async()=>{
- const params=new URLSearchParams(location.search),oauthError=params.get('error_description')||params.get('error');
- if(oauthError){josMsg('josCustomerAuthMsg','Login Google ditolak: '+oauthError,true);return;}
- if(!josGoogleOAuthCompleting)return;
+
+async function josHandleNativeGoogleCallback(rawUrl){
  try{
-  let user=null;
-  for(let attempt=0;attempt<20;attempt++){const {data,error}=await josDb.auth.getSession();if(error)throw error;if(data?.session?.user){user=data.session.user;break;}await new Promise(resolve=>setTimeout(resolve,300));}
-  if(!user){const {data,error}=await josDb.auth.getUser();if(error)throw error;user=data?.user||null;}
-  if(!user)throw Error('Callback Google sudah kembali, tetapi Supabase belum menyimpan sesi. Periksa URL Redirect dan konfigurasi OAuth Supabase.');
+  const callback=new URL(rawUrl);
+  if(callback.protocol!=='josapp:'||callback.hostname!=='auth'||callback.pathname!=='/callback')return;
+  const code=callback.searchParams.get('code');
+  if(!code)throw Error(callback.searchParams.get('error_description')||'Kode login Google tidak ditemukan.');
+  const {data,error}=await josDb.auth.exchangeCodeForSession(code);
+  if(error)throw error;
+  const user=data?.session?.user;
+  if(!user)throw Error('Sesi Google belum berhasil disimpan.');
   const resolved=await josResolveGoogleCustomer(user);
-  if(!resolved)throw Error('Akun Google ini sudah terdaftar sebagai Mitra/Admin atau bukan akun pelanggan JOS.');
-  history.replaceState(null,'',location.pathname+'#akun');
-  document.querySelectorAll('.portal-layer').forEach(x=>x.classList.remove('open'));josEl('josPortalCustomer')?.classList.add('open');
+  if(!resolved)throw Error('Akun Google ini bukan akun pelanggan JOS.');
+  try{await window.Capacitor?.Plugins?.Browser?.close();}catch(_){}
+  history.replaceState(null,'',location.pathname+location.search+'#akun');
+  document.querySelectorAll('.portal-layer').forEach(x=>x.classList.remove('open'));
+  josEl('josPortalCustomer')?.classList.add('open');
   if(typeof setJosPageStatus==='function')setJosPageStatus('Akun');
   document.querySelectorAll('.bottom .nav').forEach(btn=>btn.classList.toggle('active',btn.dataset.nav==='Akun'));
-  josPortalTab('customer');await josShowRole(resolved,'customer');
- }catch(err){josMsg('josCustomerAuthMsg','Verifikasi login Google gagal: '+err.message,true);}
+  josPortalTab('customer');
+  await josShowRole(resolved,'customer');
+  josMsg('josCustomerAuthMsg','Login Google berhasil. Profil pelanggan JOS sudah dibuka.');
+ }catch(err){
+  try{await window.Capacitor?.Plugins?.Browser?.close();}catch(_){}
+  josMsg('josCustomerAuthMsg','Login Google belum selesai: '+(err.message||'Silakan coba lagi.'),true);
+ }finally{
+  josEl('josCustomerGoogleLogin').disabled=false;
+ }
+}
+(function josRegisterNativeGoogleCallback(){
+ const app=window.Capacitor?.Plugins?.App;
+ if(!app?.addListener)return;
+ app.addListener('appUrlOpen',event=>josHandleNativeGoogleCallback(event.url));
+ app.getLaunchUrl?.().then(result=>{if(result?.url)josHandleNativeGoogleCallback(result.url);}).catch(()=>{});
+})();
+let josGoogleOAuthCompleting=!!(new URLSearchParams(location.search).has('code') || /(?:^|[&#])access_token=/.test(location.hash));
+(async()=>{
+ const params=new URLSearchParams(location.search);
+ const hashParams=new URLSearchParams(location.hash.replace(/^#/,'')); 
+ const oauthError=params.get('error_description')||params.get('error')||hashParams.get('error_description')||hashParams.get('error');
+ if(oauthError){
+  josMsg('josCustomerAuthMsg','Login Google ditolak: '+oauthError,true);
+  josGoogleOAuthCompleting=false;
+  return;
+ }
+ if(!josGoogleOAuthCompleting)return;
+ try{
+  // detectSessionInUrl:true membuat Supabase menyelesaikan callback PKCE/implicit
+  // satu kali saat client diinisialisasi. Jangan menukar code untuk kedua kalinya.
+  let session=null,user=null;
+  for(let attempt=0;attempt<20;attempt++){
+   const {data,error}=await josDb.auth.getSession();
+   if(error)throw error;
+   session=data?.session||null;
+   if(session?.user){user=session.user;break;}
+   await new Promise(resolve=>setTimeout(resolve,300));
+  }
+  if(!user){
+   const {data,error}=await josDb.auth.getUser();
+   if(error)throw error;
+   user=data?.user||null;
+  }
+  if(!user)throw Error('Callback Google sudah kembali, tetapi Supabase belum menyimpan sesi. Periksa URL Redirect dan konfigurasi OAuth Supabase.');
+  const resolved=await josResolveGoogleCustomer(user);
+  if(!resolved)throw Error('Akun Google ini memiliki jenis akun atau aplikasi berbeda dan tidak dapat dibuka sebagai pelanggan JOS.');
+  history.replaceState(null,'',location.pathname+location.search.split('?')[0]+'#akun');
+  document.querySelectorAll('.portal-layer').forEach(x=>x.classList.remove('open'));
+  josEl('josPortalCustomer')?.classList.add('open');
+  if(typeof setJosPageStatus==='function')setJosPageStatus('Akun');
+  document.querySelectorAll('.bottom .nav').forEach(btn=>btn.classList.toggle('active',btn.dataset.nav==='Akun'));
+  josPortalTab('customer');
+  await josShowRole(resolved,'customer');
+  josMsg('josCustomerAuthMsg','Login Google berhasil. Profil pelanggan JOS sudah dibuka.');
+ }catch(err){
+  josMsg('josCustomerAuthMsg','Login Google belum selesai: '+(err.message||'Kesalahan tidak diketahui.'),true);
+ }finally{
+  josGoogleOAuthCompleting=false;
+ }
 })();
 
 
