@@ -56,6 +56,26 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Declare Android location permissions
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("android/app/src/main/AndroidManifest.xml")
+          s=p.read_text()
+          permissions=[
+              '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />',
+              '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />'
+          ]
+          for item in permissions:
+              if item not in s:
+                  pos=s.find("<application")
+                  if pos < 0: raise SystemExit("Android application tag not found")
+                  s=s[:pos]+item+"\\n"+s[pos:]
+          p.write_text(s)
+          print("Android location permissions declared.")
+          PY
+
       - name: Configure native deep link callback
         run: |
           set -euo pipefail
