@@ -3028,10 +3028,25 @@ document.addEventListener('click',event=>{
  });
  document.querySelectorAll('.jos-pick-address').forEach(b=>b.addEventListener('click',()=>openPicker(b.dataset.addressTarget)));
  document.getElementById('josCloseAddressPicker').addEventListener('click',()=>{panel.hidden=true;});
- document.getElementById('josUseMyLocation').addEventListener('click',()=>{
-  if(!navigator.geolocation){status.textContent='GPS tidak didukung perangkat.';return;}
-  status.textContent='Mengambil lokasi perangkat...';
-  navigator.geolocation.getCurrentPosition(pos=>{const ll={lat:pos.coords.latitude,lng:pos.coords.longitude};map.setView(ll,17);setPoint(ll,true);},err=>{status.textContent='Lokasi tidak tersedia. Izinkan akses lokasi.';},{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+ document.getElementById('josUseMyLocation').addEventListener('click',async()=>{
+  status.textContent='Meminta izin dan mengambil lokasi perangkat...';
+  const applyPosition=pos=>{const ll={lat:pos.coords.latitude,lng:pos.coords.longitude};map.setView(ll,17);setPoint(ll,true);status.textContent='Lokasi perangkat berhasil ditemukan. Tekan “Gunakan titik ini” jika ingin menyimpan titik.';};
+  try{
+   const nativeGeo=window.Capacitor?.Plugins?.Geolocation;
+   if(nativeGeo?.getCurrentPosition){
+    const pos=await nativeGeo.getCurrentPosition({enableHighAccuracy:true,timeout:20000});
+    applyPosition(pos);
+    return;
+   }
+   if(!navigator.geolocation){status.textContent='GPS tidak didukung perangkat.';return;}
+   navigator.geolocation.getCurrentPosition(applyPosition,err=>{
+    const messages={1:'Izin lokasi ditolak. Aktifkan izin Lokasi untuk JOS di pengaturan aplikasi.',2:'Lokasi perangkat belum tersedia. Aktifkan GPS lalu coba lagi.',3:'Waktu mengambil lokasi habis. Coba lagi di area terbuka.'};
+    status.textContent=messages[err.code]||'Lokasi tidak tersedia. Periksa izin lokasi dan GPS perangkat.';
+   },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+  }catch(err){
+   const msg=String(err?.message||err||'');
+   status.textContent=/denied|permission/i.test(msg)?'Izin lokasi belum diberikan. Izinkan akses lokasi untuk JOS lalu coba lagi.':'Gagal mengambil lokasi. Pastikan GPS aktif lalu coba lagi.';
+  }
  });
  saveButton.addEventListener('click',async()=>{
   if(!target||!point)return;
