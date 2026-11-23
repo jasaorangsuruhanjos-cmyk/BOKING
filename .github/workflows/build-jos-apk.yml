@@ -38,7 +38,7 @@ jobs:
         with:
           tag_name: latest
           name: JOS Android APK (Latest)
-          body: APK resmi JOS versi terbaru. Unduh app-debug.apk untuk memasang aplikasi.
+          body: APK resmi JOS versi terbaru dengan ikon dan splash screen JOS. Unduh app-debug.apk untuk memasang aplikasi.
           files: android-app/app/build/outputs/apk/debug/app-debug.apk
           make_latest: true
         env:
