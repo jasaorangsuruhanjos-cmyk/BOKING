@@ -28,21 +28,21 @@ import { Capacitor } from '@capacitor/core';
       const code = callback.searchParams.get('code');
       if (!code) throw new Error('Kode callback Google tidak ditemukan. Silakan coba login kembali.');
 
-      const { data, error } = await window.josDb.auth.exchangeCodeForSession(code);
+      const { data, error } = await josDb.auth.exchangeCodeForSession(code);
       if (error) throw error;
       const user = data?.user || data?.session?.user;
       if (!user) throw new Error('Sesi Google belum berhasil dibuat. Silakan coba lagi.');
 
-      const resolved = await window.josResolveGoogleCustomer(user);
+      const resolved = await josResolveGoogleCustomer(user);
       if (!resolved) throw new Error('Akun Google ini sudah terdaftar sebagai Mitra/Admin atau bukan akun pelanggan JOS.');
 
       history.replaceState(null, '', location.pathname + '#akun');
       document.querySelectorAll('.portal-layer').forEach(x => x.classList.remove('open'));
       document.getElementById('josPortalCustomer')?.classList.add('open');
-      if (typeof window.setJosPageStatus === 'function') window.setJosPageStatus('Akun');
+      if (typeof setJosPageStatus === 'function') setJosPageStatus('Akun');
       document.querySelectorAll('.bottom .nav').forEach(btn => btn.classList.toggle('active', btn.dataset.nav === 'Akun'));
-      window.josPortalTab('customer');
-      await window.josShowRole(resolved, 'customer');
+      josPortalTab('customer');
+      await josShowRole(resolved, 'customer');
       message('Login Google berhasil.');
     } catch (err) {
       message('Login Google gagal: ' + (err?.message || 'Silakan coba lagi.'), true);
@@ -59,7 +59,7 @@ import { Capacitor } from '@capacitor/core';
     btn.disabled = true;
     message('Menghubungkan ke Google...');
     try {
-      const { data, error } = await window.josDb.auth.signInWithOAuth({
+      const { data, error } = await josDb.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: 'josapp://auth/callback',
