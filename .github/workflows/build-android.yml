@@ -116,6 +116,25 @@ jobs:
       - name: Install Capacitor
         run: npm install
 
+      - name: Bundle native Android Google OAuth callback
+        run: |
+          set -euo pipefail
+          npx esbuild android-oauth-bridge.js --bundle --format=iife --platform=browser --target=es2020 --outfile=www/jos-android-oauth-bridge.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("www/index.html")
+          html=p.read_text()
+          tag='<script src="jos-android-oauth-bridge.js"></script>'
+          if tag not in html:
+              pos=html.lower().rfind("</body>")
+              if pos < 0: raise SystemExit("Cannot add native OAuth bridge: </body> missing")
+              html=html[:pos]+tag+html[pos:]
+              p.write_text(html)
+          if not Path("www/jos-android-oauth-bridge.js").is_file():
+              raise SystemExit("Native OAuth bridge bundle missing")
+          print("Bundled Capacitor App + Browser OAuth callback bridge.")
+          PY
+
       - name: Generate Android project
         run: npx cap add android
 
