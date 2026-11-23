@@ -1489,7 +1489,9 @@ const josDb=window.supabase.createClient(
     persistSession:true,
     autoRefreshToken:true,
     flowType:'pkce',
-    detectSessionInUrl:true,
+    // OAuth callback ditukar secara eksplisit satu kali di handler di bawah.
+    // Ini mencegah race antara auto-detection SDK dan callback login.
+    detectSessionInUrl:false,
     // Sesi halaman utama hanya untuk pelanggan; tidak berbagi storage dengan portal mitra.
     storageKey:'jos-customer-auth'
   }}
@@ -1608,7 +1610,7 @@ async function josCustomerSubmit(e){
       if(!phone)throw Error('Nomor WhatsApp wajib diisi.');
       const {data,error}=await josDb.auth.signUp({email,password,options:{
         data:{full_name:fullName,phone,account_type:'customer',app_brand:'JOS',source_app:'JOS'},
-        emailRedirectTo:'https://jasaorangsuruhanjos-cmyk.github.io/BOKING/#akun'
+        emailRedirectTo:'https://jasaorangsuruhan.my.id/#akun'
       }});
       if(error)throw error;
       josMsg('josCustomerAuthMsg',data.session?'Akun pelanggan berhasil dibuat dan sudah login.':'Pendaftaran berhasil.\nBuka email yang digunakan saat mendaftar.\nPeriksa folder Spam jika email verifikasi tidak ada di Inbox.');
@@ -1735,51 +1737,46 @@ async function josHandleNativeGoogleCallback(rawUrl){
  app.addListener('appUrlOpen',event=>josHandleNativeGoogleCallback(event.url));
  app.getLaunchUrl?.().then(result=>{if(result?.url)josHandleNativeGoogleCallback(result.url);}).catch(()=>{});
 })();
-let josGoogleOAuthCompleting=!!(new URLSearchParams(location.search).has('code') || /(?:^|[&#])access_token=/.test(location.hash));
+let josGoogleOAuthCompleting=new URLSearchParams(location.search).has('code');
 (async()=>{
- const params=new URLSearchParams(location.search);
- const hashParams=new URLSearchParams(location.hash.replace(/^#/,'')); 
- const oauthError=params.get('error_description')||params.get('error')||hashParams.get('error_description')||hashParams.get('error');
- if(oauthError){
-  josMsg('josCustomerAuthMsg','Login Google ditolak: '+oauthError,true);
-  josGoogleOAuthCompleting=false;
-  return;
- }
- if(!josGoogleOAuthCompleting)return;
- try{
-  // detectSessionInUrl:true membuat Supabase menyelesaikan callback PKCE/implicit
-  // satu kali saat client diinisialisasi. Jangan menukar code untuk kedua kalinya.
-  let session=null,user=null;
-  for(let attempt=0;attempt<20;attempt++){
-   const {data,error}=await josDb.auth.getSession();
-   if(error)throw error;
-   session=data?.session||null;
-   if(session?.user){user=session.user;break;}
-   await new Promise(resolve=>setTimeout(resolve,300));
+  const params=new URLSearchParams(location.search);
+  const code=params.get('code');
+  const hashParams=new URLSearchParams(location.hash.replace(/^#/,'')); 
+  const oauthError=params.get('error_description')||params.get('error')||hashParams.get('error_description')||hashParams.get('error');
+  if(oauthError){
+   josMsg('josCustomerAuthMsg','Login Google ditolak: '+oauthError,true);
+   josGoogleOAuthCompleting=false;
+   return;
   }
-  if(!user){
-   const {data,error}=await josDb.auth.getUser();
+  if(!code)return;
+  try{
+   // Dengan detectSessionInUrl:false, hanya blok ini yang menukar PKCE code.
+   // Tidak ada getUser/updateUser sebelum session berhasil tersimpan.
+   const {data,error}=await josDb.auth.exchangeCodeForSession(code);
    if(error)throw error;
-   user=data?.user||null;
+   let user=data?.user||data?.session?.user||null;
+   if(!user){
+    const {data:sessionData,error:sessionError}=await josDb.auth.getSession();
+    if(sessionError)throw sessionError;
+    user=sessionData?.session?.user||null;
+   }
+   if(!user)throw Error('Google berhasil kembali, tetapi sesi login belum tersimpan. Silakan coba login kembali.');
+   const resolved=await josResolveGoogleCustomer(user);
+   if(!resolved)throw Error('Akun Google ini memiliki jenis akun atau aplikasi berbeda dan tidak dapat dibuka sebagai pelanggan JOS.');
+   history.replaceState(null,'',location.pathname+'#akun');
+   document.querySelectorAll('.portal-layer').forEach(x=>x.classList.remove('open'));
+   josEl('josPortalCustomer')?.classList.add('open');
+   if(typeof setJosPageStatus==='function')setJosPageStatus('Akun');
+   document.querySelectorAll('.bottom .nav').forEach(btn=>btn.classList.toggle('active',btn.dataset.nav==='Akun'));
+   josPortalTab('customer');
+   await josShowRole(resolved,'customer');
+   josMsg('josCustomerAuthMsg','Login Google berhasil. Profil pelanggan JOS sudah dibuka.');
+  }catch(err){
+   josMsg('josCustomerAuthMsg','Login Google belum selesai: '+(err.message||'Kesalahan tidak diketahui.'),true);
+  }finally{
+   josGoogleOAuthCompleting=false;
   }
-  if(!user)throw Error('Callback Google sudah kembali, tetapi Supabase belum menyimpan sesi. Periksa URL Redirect dan konfigurasi OAuth Supabase.');
-  const resolved=await josResolveGoogleCustomer(user);
-  if(!resolved)throw Error('Akun Google ini memiliki jenis akun atau aplikasi berbeda dan tidak dapat dibuka sebagai pelanggan JOS.');
-  history.replaceState(null,'',location.pathname+location.search.split('?')[0]+'#akun');
-  document.querySelectorAll('.portal-layer').forEach(x=>x.classList.remove('open'));
-  josEl('josPortalCustomer')?.classList.add('open');
-  if(typeof setJosPageStatus==='function')setJosPageStatus('Akun');
-  document.querySelectorAll('.bottom .nav').forEach(btn=>btn.classList.toggle('active',btn.dataset.nav==='Akun'));
-  josPortalTab('customer');
-  await josShowRole(resolved,'customer');
-  josMsg('josCustomerAuthMsg','Login Google berhasil. Profil pelanggan JOS sudah dibuka.');
- }catch(err){
-  josMsg('josCustomerAuthMsg','Login Google belum selesai: '+(err.message||'Kesalahan tidak diketahui.'),true);
- }finally{
-  josGoogleOAuthCompleting=false;
- }
 })();
-
 
 // Bantuan verifikasi dan pemulihan akun tanpa mengubah/menghapus akun yang sudah ada.
 async function josResendVerification(kind){
@@ -1791,7 +1788,7 @@ async function josResendVerification(kind){
   if(!email){josMsg(msgId,'Masukkan email terlebih dahulu.',true);return;}
   if(btn){btn.disabled=true;btn.textContent='Mengirim...';}
   try{
-    const {error}=await client.auth.resend({type:'signup',email,options:{emailRedirectTo:'https://jasaorangsuruhanjos-cmyk.github.io/BOKING/#akun'}});
+    const {error}=await client.auth.resend({type:'signup',email,options:{emailRedirectTo:'https://jasaorangsuruhan.my.id/#akun'}});
     if(error)throw error;
     josMsg(msgId,'Permintaan kirim ulang berhasil diteruskan. Periksa Inbox, Spam, dan Promotions. Jika tetap tidak masuk, periksa SMTP dan Auth Logs di Supabase.');
     if(isCustomer&&btn){btn.hidden=true;btn.disabled=true;}
@@ -1805,7 +1802,7 @@ async function josResetPassword(kind){
   const msgId=isCustomer?'josCustomerAuthMsg':'josMitraAuthMsg';
   if(!email){josMsg(msgId,'Isi email akun terlebih dahulu, lalu tekan Lupa password?',true);return;}
   try{
-    const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:'https://jasaorangsuruhanjos-cmyk.github.io/BOKING/#akun'});
+    const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:'https://jasaorangsuruhan.my.id/#akun'});
     if(error)throw error;
     josMsg(msgId,'Jika email terdaftar, tautan pemulihan password akan dikirim. Periksa Inbox, Spam, dan Promotions.');
   }catch(err){josMsg(msgId,err.message||'Gagal meminta pemulihan password.',true);}
@@ -1825,7 +1822,7 @@ async function josMitraSubmit(e){
       if(!josVal('josMitraRegName'))throw Error('Nama lengkap wajib diisi.');
       const {data,error}=await josMitraDb.auth.signUp({email,password,options:{
         data:{full_name:josVal('josMitraRegName'),account_type:'mitra'},
-        emailRedirectTo:'https://jasaorangsuruhanjos-cmyk.github.io/BOKING/#mitra'
+        emailRedirectTo:'https://jasaorangsuruhan.my.id/#mitra'
       }});
       if(error)throw error;
       josMsg('josMitraAuthMsg',data.session?'Akun mitra dibuat. Silakan lengkapi profil dan tunggu persetujuan admin.':'Pendaftaran akun mitra berhasil. Verifikasi email terlebih dahulu, lalu login melalui Portal Mitra.');
@@ -2458,9 +2455,10 @@ async function josAdminLoad(kind){
 async function josAdminSetOrder(id,status){const {error}=await josAdminDb.rpc('jos_admin_set_order_status',{p_order_id:String(id),p_status:status});if(error)alert(error.message);else josAdminLoad('orders');}
 async function josAdminSetMitra(id,status){const {error}=await josAdminDb.from('jos_mitra_profiles').update({status_akun:status}).eq('id',id);if(error)alert(error.message);else josAdminLoad('mitra');}
 josDb.auth.onAuthStateChange((event,session)=>{
-  // Jangan memanggil Supabase kembali secara langsung dari callback auth.
-  // Penjadwalan ini memberi kesempatan SDK menyelesaikan proses refresh token.
+  // Callback OAuth menangani sesi dan profil sendiri; hindari refresh paralel
+  // yang dapat menjalankan updateUser bersamaan sebelum proses callback selesai.
   setTimeout(()=>{
+    if(josGoogleOAuthCompleting)return;
     if(josEl('josPortalOrders')?.classList.contains('open'))josLoadCustomerOrders();
     if(josEl('josPortalCustomer')?.classList.contains('open') && session?.user){
       josRefreshPortalSession('customer');
