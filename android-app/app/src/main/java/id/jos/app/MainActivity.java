@@ -2,6 +2,8 @@ package id.jos.app;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebChromeClient;
@@ -11,20 +13,37 @@ import android.webkit.ValueCallback;
 import android.content.Intent;
 import android.net.Uri;
 import android.graphics.Color;
+import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 public class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 501;
     private static final String HOME = "https://jasaorangsuruhanjos-cmyk.github.io/BOKING/";
     private WebView webView;
+    private ImageView splashView;
     private ValueCallback<Uri[]> uploadCallback;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setStatusBarColor(Color.BLACK);
-        getWindow().setNavigationBarColor(Color.BLACK);
+        getWindow().setStatusBarColor(Color.rgb(7, 59, 53));
+        getWindow().setNavigationBarColor(Color.rgb(241, 241, 241));
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(Color.WHITE);
+
+        splashView = new ImageView(this);
+        splashView.setImageResource(R.drawable.jos_pwa_splash);
+        splashView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        splashView.setBackgroundColor(Color.WHITE);
+        root.addView(splashView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.WHITE);
+        webView.setVisibility(View.INVISIBLE);
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -37,6 +56,12 @@ public class MainActivity extends Activity {
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
 
         webView.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView view, String url) {
+                webView.setVisibility(View.VISIBLE);
+                splashView.animate().alpha(0f).setDuration(180).withEndAction(() -> {
+                    splashView.setVisibility(View.GONE);
+                }).start();
+            }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 return handleUrl(request.getUrl());
             }
@@ -61,9 +86,16 @@ public class MainActivity extends Activity {
             }
         });
 
-        setContentView(webView);
+        root.addView(webView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
+        setContentView(root);
+
         if (savedInstanceState == null) webView.loadUrl(HOME);
-        else webView.restoreState(savedInstanceState);
+        else {
+            webView.restoreState(savedInstanceState);
+            if (webView.getUrl() == null) webView.loadUrl(HOME);
+        }
     }
 
     private boolean handleUrl(Uri uri) {
