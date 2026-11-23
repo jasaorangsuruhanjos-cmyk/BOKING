@@ -3,6 +3,5 @@
         <item name="android:windowSplashScreenBackground">#FFFFFF</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/jos_pwa_splash</item>
         <item name="android:windowSplashScreenIconBackgroundColor">#FFFFFF</item>
-        <item name="android:postSplashScreenTheme">@style/AppTheme</item>
     </style>
 </resources>
