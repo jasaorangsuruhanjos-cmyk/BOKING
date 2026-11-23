@@ -125,14 +125,8 @@ jobs:
               script=r"""
           <script id="jos-native-webview-diagnostics">
           (function () {
-            var nativeApp = false;
-            try {
-              nativeApp = !!(window.Capacitor &&
-                typeof window.Capacitor.isNativePlatform === 'function' &&
-                window.Capacitor.isNativePlatform());
-            } catch (_) {}
-            if (!nativeApp) return;
-
+            // This HTML copy is packaged only inside the APK. Do not gate
+            // diagnostics on window.Capacitor: the bridge may initialize later.
             var errors = [];
             function report(kind, detail) {
               var msg = String(detail || 'Unknown error').slice(0, 500);
@@ -165,12 +159,18 @@ jobs:
               try { report('Console', Array.prototype.slice.call(arguments).join(' ')); } catch (_) {}
               return originalError.apply(console, arguments);
             };
-            window.addEventListener('load', function () {
-              setTimeout(function () {
-                if (!document.querySelector('.app')) report('Page startup', 'Elemen utama .app tidak ditemukan setelah halaman selesai dimuat.');
-                else if (!document.body || !document.body.innerText.trim()) report('Page startup', 'Dokumen terbuka tetapi isi halaman kosong.');
-              }, 7000);
-            });
+            function checkStartup() {
+              if (!document.querySelector('.app')) {
+                report('Page startup', 'Elemen utama .app tidak ditemukan pada dokumen APK.');
+              } else if (!document.body || !document.body.innerText.trim()) {
+                report('Page startup', 'Dokumen terbuka tetapi isi halaman kosong.');
+              }
+            }
+            window.addEventListener('load', function () { setTimeout(checkStartup, 4000); });
+            setTimeout(function () {
+              if (document.readyState !== 'complete') report('Page loading', 'Halaman belum selesai dimuat. Periksa koneksi dan pemuatan CDN.');
+              else if (errors.length) report('Page startup', 'Ada error saat aplikasi dimuat.');
+            }, 12000);
           })();
           </script>
           """
