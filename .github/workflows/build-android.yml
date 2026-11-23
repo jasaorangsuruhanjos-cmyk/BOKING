@@ -213,6 +213,48 @@ jobs:
       - name: Sync native project
         run: npx cap sync android
 
+      - name: Remove duplicate small Android launch icon; keep single large web splash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          # Android 12+ draws a mandatory system splash before the app WebView.
+          # Keep its background white but make its small centered icon transparent;
+          # the approved large JOS artwork is shown once by index.html afterward.
+          p=Path('android/app/src/main/res/values-v31/styles.xml')
+          if not p.exists():
+              raise SystemExit('Android 12+ launch theme styles not found')
+          s=p.read_text()
+          if 'windowSplashScreenAnimatedIcon' in s:
+              s=re.sub(
+                  r'(<item\\s+name=["\\']android:windowSplashScreenAnimatedIcon["\\']\\s*>).*?(</item>)',
+                  r'\\1@android:color/transparent\\2',
+                  s,
+                  flags=re.S
+              )
+          else:
+              # Add the transparent icon to the generated launch theme only.
+              m=re.search(r'(<style\\b[^>]*name=["\\'][^"\\']*Launch[^"\\']*["\\'][^>]*>)',s)
+              if not m:
+                  raise SystemExit('Could not identify Android launch theme in values-v31/styles.xml')
+              s=s[:m.end()]+'\\n        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>\\n        <item name="android:windowSplashScreenBackground">#FFFFFF</item>'+s[m.end():]
+          # Force white system background so the transition to the single large
+          # web splash is visually clean and contains no duplicate logo.
+          if 'windowSplashScreenBackground' in s:
+              s=re.sub(
+                  r'(<item\\s+name=["\\']android:windowSplashScreenBackground["\\']\\s*>).*?(</item>)',
+                  r'\\1#FFFFFF\\2',
+                  s,
+                  flags=re.S
+              )
+          p.write_text(s)
+          if '@android:color/transparent' not in s:
+              raise SystemExit('Failed to remove the small Android launch icon')
+          print('Android 12+ native splash icon is transparent; one large web splash remains.')
+          PY
+
       - name: Preserve the exact square splash artwork on every Android screen size
         run: |
           python3 - <<'PY'
