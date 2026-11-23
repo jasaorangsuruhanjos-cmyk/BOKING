@@ -2598,78 +2598,26 @@ document.getElementById('overlay')?.addEventListener('click',function(event){
   const closeButton=document.getElementById('josInstallClose');
   if(!banner||!installButton||!closeButton)return;
 
-  let installPromptEvent=null;
-  let hideTimer=null;
-  let bannerTimer=null;
-  const isInstalled=window.matchMedia('(display-mode: standalone)').matches ||
-    window.navigator.standalone===true;
-  if(isInstalled)return;
-
   function showBanner(){
     banner.classList.add('show');
     banner.setAttribute('aria-hidden','false');
-    if(hideTimer)clearTimeout(hideTimer);
-    hideTimer=setTimeout(hideBanner,12000);
   }
   function hideBanner(){
     banner.classList.remove('show');
     banner.setAttribute('aria-hidden','true');
-    if(hideTimer)clearTimeout(hideTimer);
   }
-
-  // Simpan event asli dari Chrome agar prompt dipanggil langsung saat tombol disentuh.
-  window.addEventListener('beforeinstallprompt',function(event){
-    event.preventDefault();
-    installPromptEvent=event;
-    installButton.textContent='Instal';
-    installButton.setAttribute('aria-label','Instal aplikasi JOS');
-    showBanner();
-  });
-
-  window.addEventListener('appinstalled',function(){
-    installPromptEvent=null;
-    hideBanner();
-  });
 
   closeButton.addEventListener('click',hideBanner);
 
-  installButton.addEventListener('click',async function(){
-    if(installPromptEvent){
-      const promptEvent=installPromptEvent;
-      installPromptEvent=null;
-      try{
-        await promptEvent.prompt();
-        const choice=await promptEvent.userChoice;
-        if(choice && choice.outcome==='accepted') hideBanner();
-      }catch(error){
-        console.warn('Prompt instal JOS tidak dapat dibuka:',error);
-        alert('Chrome belum dapat membuka jendela instal. Coba muat ulang halaman, lalu tekan Instal kembali.');
-      }
-      return;
-    }
-
-    // Browser yang tidak menyediakan beforeinstallprompt tetap diberi petunjuk yang sesuai.
-    const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
-    if(isIOS){
-      alert('Untuk memasang JOS di iPhone: tekan tombol Bagikan, lalu pilih “Add to Home Screen” / “Tambahkan ke Layar Utama”.');
-    }else{
-      alert('Fitur instal otomatis belum tersedia dari Chrome untuk halaman ini. Buka menu Chrome (⋮), lalu pilih “Instal aplikasi” atau “Tambahkan ke layar utama”. Jika pilihan itu belum ada, muat ulang halaman dan coba lagi beberapa saat kemudian.');
-    }
+  // Tombol popup menuju halaman unduh APK Android resmi JOS, bukan instalasi PWA.
+  installButton.addEventListener('click',function(){
+    window.location.href='download.html';
   });
 
-  // Tampilkan banner setelah halaman siap; jika event Chrome datang belakangan,
-  // listener di atas akan tetap mengaktifkan tombol Instal otomatis.
-  // Popup instal aplikasi menjadi popup utama saat pengunjung membuka link JOS.
-  // Jika Chrome mengirim beforeinstallprompt, tombol langsung menjalankan prompt asli.
-  // Jika belum tersedia, banner tetap tampil dengan petunjuk instal yang sesuai.
   window.addEventListener('load',function(){
-    bannerTimer=setTimeout(function(){
-      if(!installPromptEvent){
-        installButton.textContent='Cara Instal';
-        installButton.setAttribute('aria-label','Lihat cara memasang aplikasi JOS');
-        showBanner();
-      }
-    },350);
+    installButton.textContent='Instal APK';
+    installButton.setAttribute('aria-label','Download dan instal APK Android JOS');
+    setTimeout(showBanner,350);
   });
 })();
 </script>
