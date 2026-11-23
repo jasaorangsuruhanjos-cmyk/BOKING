@@ -86,6 +86,72 @@ jobs:
           p.write_text(s)
           PY
 
+      - name: Install native WebView Google OAuth bridge
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          files=list(Path("android/app/src/main/java").rglob("MainActivity.java"))
+          if len(files)!=1:
+              raise SystemExit(f"Expected one Capacitor MainActivity.java, found {len(files)}")
+          p=files[0]
+          s=p.read_text()
+          imports=[
+              "import android.webkit.JavascriptInterface;",
+              "import android.content.Intent;",
+              "import android.net.Uri;",
+              "import org.json.JSONObject;"
+          ]
+          line_end=s.find("\\n")
+          if line_end < 0: raise SystemExit("Java package declaration missing")
+          for item in imports:
+              if item not in s:
+                  s=s[:line_end+1]+item+"\\n"+s[line_end+1:]
+                  line_end=s.find("\\n")
+          if "new JosAndroidBridge()" not in s:
+              pos=s.find("{",s.find("class MainActivity"))
+              if pos < 0: raise SystemExit("MainActivity class declaration missing")
+              code='''
+              @Override
+              public void onCreate(android.os.Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  getBridge().getWebView().addJavascriptInterface(new JosAndroidBridge(), "JosAndroid");
+              }
+
+              private class JosAndroidBridge {
+                  @JavascriptInterface
+                  public void openGoogleAuth(String url) {
+                      try {
+                          Uri target=Uri.parse(url);
+                          String host=target.getHost()==null?"":target.getHost().toLowerCase();
+                          if (!"https".equals(target.getScheme()) || !host.endsWith(".supabase.co")) return;
+                          runOnUiThread(() -> {
+                              try { startActivity(new Intent(Intent.ACTION_VIEW,target)); }
+                              catch (Exception ignored) {}
+                          });
+                      } catch (Exception ignored) {}
+                  }
+              }
+
+              @Override
+              protected void onNewIntent(Intent intent) {
+                  super.onNewIntent(intent);
+                  setIntent(intent);
+                  Uri callback=intent==null?null:intent.getData();
+                  if(callback!=null && "josapp".equals(callback.getScheme())
+                      && "auth".equals(callback.getHost()) && "/callback".equals(callback.getPath())) {
+                      final String callbackUrl=callback.toString();
+                      getBridge().getWebView().post(() -> getBridge().getWebView().evaluateJavascript(
+                          "if(window.josHandleNativeGoogleCallback){window.josHandleNativeGoogleCallback("
+                          + JSONObject.quote(callbackUrl) + ");}", null));
+                  }
+              }
+              '''
+              s=s[:pos+1]+code+s[pos+1:]
+          p.write_text(s)
+          print("Installed JosAndroid JavaScript bridge in",p)
+          PY
+
       - name: Decode the two approved JOS Android images
         run: |
           set -euo pipefail
