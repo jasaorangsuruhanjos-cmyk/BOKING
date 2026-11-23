@@ -113,6 +113,76 @@ jobs:
           print("Native APK only: install popup disabled; browser website unchanged.") 
           PY
 
+      - name: Add native WebView runtime diagnostics
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('www/index.html')
+          html=p.read_text()
+          marker='id="jos-native-webview-diagnostics"'
+          if marker not in html:
+              script=r"""
+          <script id="jos-native-webview-diagnostics">
+          (function () {
+            var nativeApp = false;
+            try {
+              nativeApp = !!(window.Capacitor &&
+                typeof window.Capacitor.isNativePlatform === 'function' &&
+                window.Capacitor.isNativePlatform());
+            } catch (_) {}
+            if (!nativeApp) return;
+
+            var errors = [];
+            function report(kind, detail) {
+              var msg = String(detail || 'Unknown error').slice(0, 500);
+              errors.push(kind + ': ' + msg);
+              if (errors.length > 8) errors.shift();
+              var panel = document.getElementById('josNativeDiagnosticPanel');
+              if (!panel) {
+                panel = document.createElement('div');
+                panel.id = 'josNativeDiagnosticPanel';
+                panel.style.cssText = 'position:fixed;inset:12px;z-index:2147483647;background:#fff;color:#17283b;border:3px solid #d33;border-radius:16px;padding:18px;font:14px/1.5 Arial,sans-serif;overflow:auto;box-shadow:0 8px 40px #0005';
+                var root = document.body || document.documentElement;
+                if (root) root.appendChild(panel);
+              }
+              if (panel) {
+                panel.innerHTML = '<h2 style="margin:0 0 10px;color:#b42318">Diagnostik Aplikasi JOS</h2><p>Halaman aplikasi mengalami kendala saat dibuka. Informasi teknis:</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">' +
+                  errors.map(function (x) { return x.replace(/[&<>"]/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]); }); }).join('\n') +
+                  '</pre><p>URL WebView: ' + String(location.href).replace(/[&<>"]/g, '') + '</p><p>Kirim screenshot layar ini kepada dukungan JOS.</p>';
+              }
+            }
+
+            window.addEventListener('error', function (e) {
+              report('JavaScript/Resource', (e.message || e.type || 'error') +
+                (e.filename ? ' @ ' + e.filename + ':' + e.lineno : ''));
+            }, true);
+            window.addEventListener('unhandledrejection', function (e) {
+              report('Promise', e.reason && (e.reason.stack || e.reason.message) || e.reason);
+            });
+            var originalError = console.error;
+            console.error = function () {
+              try { report('Console', Array.prototype.slice.call(arguments).join(' ')); } catch (_) {}
+              return originalError.apply(console, arguments);
+            };
+            window.addEventListener('load', function () {
+              setTimeout(function () {
+                if (!document.querySelector('.app')) report('Page startup', 'Elemen utama .app tidak ditemukan setelah halaman selesai dimuat.');
+                else if (!document.body || !document.body.innerText.trim()) report('Page startup', 'Dokumen terbuka tetapi isi halaman kosong.');
+              }, 7000);
+            });
+          })();
+          </script>
+          """
+              pos=html.lower().find('</head>')
+              if pos < 0: raise SystemExit('HTML head closing tag missing')
+              html=html[:pos]+script+html[pos:]
+              p.write_text(html)
+          if marker not in p.read_text():
+              raise SystemExit('Native WebView diagnostics injection failed')
+          print('Native-only WebView diagnostics enabled; browser website unchanged.')
+          PY
+
       - name: Install Capacitor
         run: npm install
 
