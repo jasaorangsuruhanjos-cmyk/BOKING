@@ -47,7 +47,7 @@ jobs:
           set -euo pipefail
           mkdir -p www
           cp index.html www/index.html
-          cp manifest.json service-worker.js jos-icon-pwa-192-v3.png jos-icon-pwa-512-v3.png www/
+          cp manifest.json service-worker.js www/
           # Hide the browser-only install prompt inside the native Android app.
           # The public website source remains unchanged, so browser visitors still see it.
           python3 - <<'PY'
