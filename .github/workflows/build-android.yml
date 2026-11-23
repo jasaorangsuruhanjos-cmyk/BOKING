@@ -248,6 +248,7 @@ jobs:
           ]
           p.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\\n')
           PY
+          cp manifest.json jos-icon-pwa-192-v3.png jos-icon-pwa-512-v3.png www/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add manifest.json jos-icon-pwa-192-v3.png jos-icon-pwa-512-v3.png
