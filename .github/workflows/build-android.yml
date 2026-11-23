@@ -48,6 +48,70 @@ jobs:
           mkdir -p www
           cp index.html www/index.html
           cp manifest.json service-worker.js jos-icon-192.png jos-icon-512.png www/
+          # Hide the browser-only install prompt inside the native Android app.
+          # The public website source remains unchanged, so browser visitors still see it.
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("www/index.html")
+          html=p.read_text()
+          guard=r"""
+          <script id="jos-native-install-popup-guard">
+          (function () {
+            function isJosNativeApp() {
+              try {
+                return !!(window.Capacitor &&
+                  typeof window.Capacitor.isNativePlatform === "function" &&
+                  window.Capacitor.isNativePlatform());
+              } catch (_) { return false; }
+            }
+            if (!isJosNativeApp()) return;
+
+            function hideInstallPrompt() {
+              var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+              var nodes = [];
+              while (walker.nextNode()) {
+                if ((walker.currentNode.nodeValue || "").includes("Pasang Aplikasi JOS")) {
+                  nodes.push(walker.currentNode);
+                }
+              }
+              nodes.forEach(function (node) {
+                var el = node.parentElement;
+                var fallback = null;
+                for (var i = 0; el && i < 10; i++, el = el.parentElement) {
+                  var rect = el.getBoundingClientRect();
+                  var style = window.getComputedStyle(el);
+                  if (style.position === "fixed" || style.position === "sticky") {
+                    el.style.setProperty("display", "none", "important");
+                    return;
+                  }
+                  if (!fallback && rect.width > window.innerWidth * 0.65 && rect.height > 65) {
+                    fallback = el;
+                  }
+                }
+                if (fallback) fallback.style.setProperty("display", "none", "important");
+              });
+            }
+
+            if (document.readyState === "loading") {
+              document.addEventListener("DOMContentLoaded", hideInstallPrompt, { once: true });
+            } else {
+              hideInstallPrompt();
+            }
+            new MutationObserver(hideInstallPrompt).observe(document.documentElement, {
+              childList: true, subtree: true, characterData: true
+            });
+          })();
+          </script>
+          """
+          if 'id="jos-native-install-popup-guard"' not in html:
+              pos=html.lower().rfind("</body>")
+              if pos < 0: raise SystemExit("Cannot inject native install guard: </body> missing")
+              html=html[:pos]+guard+html[pos:]
+              p.write_text(html)
+          if 'id="jos-native-install-popup-guard"' not in p.read_text():
+              raise SystemExit("Native install popup guard was not added")
+          print("Native APK only: install popup disabled; browser website unchanged.") 
+          PY
 
       - name: Install Capacitor
         run: npm install
