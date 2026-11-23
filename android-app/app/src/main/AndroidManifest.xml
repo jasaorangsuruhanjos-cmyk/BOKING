@@ -4,8 +4,8 @@
     <application
         android:allowBackup="false"
         android:label="JOS Pelanggan"
-        android:icon="@drawable/jos_icon"
-        android:roundIcon="@drawable/jos_icon"
+        android:icon="@drawable/jos_icon.png"
+        android:roundIcon="@drawable/jos_icon.png"
         android:theme="@style/LaunchTheme"
         android:usesCleartextTraffic="false">
         <activity

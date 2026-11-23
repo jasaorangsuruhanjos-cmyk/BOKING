@@ -55,6 +55,21 @@ public class MainActivity extends Activity {
 
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
+                // Hide the website's PWA-install banner only inside this native APK.
+                view.evaluateJavascript("(function(){"
+                    + "var hideJosInstall=function(){"
+                    + "document.querySelectorAll('body *').forEach(function(el){"
+                    + "if(el.children.length===0 && /Pasang Aplikasi JOS|Akses layanan JOS lebih cepat langsung dari layar utama|Cara Instal/i.test(el.textContent||'')){"
+                    + "var p=el; for(var i=0;i<6 && p && p!==document.body;i++){"
+                    + "var r=p.getBoundingClientRect();"
+                    + "if(r.width>window.innerWidth*0.60 && r.height>35){p.style.setProperty('display','none','important');break;}"
+                    + "p=p.parentElement;}"
+                    + "}"
+                    + "});};"
+                    + "window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();},true);"
+                    + "hideJosInstall();"
+                    + "new MutationObserver(hideJosInstall).observe(document.documentElement,{childList:true,subtree:true});"
+                    + "})();", null);
                 webView.setVisibility(View.VISIBLE);
                 splashView.animate().alpha(0f).setDuration(180).withEndAction(() -> {
                     splashView.setVisibility(View.GONE);
