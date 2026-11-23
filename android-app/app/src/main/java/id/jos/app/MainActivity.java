@@ -8,6 +8,8 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebResourceRequest;
 import android.webkit.ValueCallback;
+import android.webkit.JavascriptInterface;
+import org.json.JSONObject;
 import android.content.Intent;
 import android.net.Uri;
 import android.graphics.Color;
@@ -68,6 +70,8 @@ public class MainActivity extends Activity {
         s.setMediaPlaybackRequiresUserGesture(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
 
+        webView.addJavascriptInterface(new JosAndroidBridge(), "JosAndroid");
+
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
                 // Hide the website's PWA-install banner only inside this native APK.
@@ -123,6 +127,36 @@ public class MainActivity extends Activity {
         else {
             webView.restoreState(savedInstanceState);
             if (webView.getUrl() == null) webView.loadUrl(HOME);
+        }
+    }
+
+    private class JosAndroidBridge {
+        @JavascriptInterface
+        public void openGoogleAuth(String url) {
+            try {
+                Uri target = Uri.parse(url);
+                String host = target.getHost() == null ? "" : target.getHost().toLowerCase();
+                if (!"https".equals(target.getScheme()) || !host.endsWith(".supabase.co")) return;
+                runOnUiThread(() -> {
+                    try { startActivity(new Intent(Intent.ACTION_VIEW, target)); }
+                    catch (Exception ignored) {}
+                });
+            } catch (Exception ignored) {}
+        }
+    }
+
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        Uri callback = intent == null ? null : intent.getData();
+        if (callback != null && "josapp".equals(callback.getScheme())
+                && "auth".equals(callback.getHost()) && "/callback".equals(callback.getPath())) {
+            final String callbackUrl = callback.toString();
+            if (webView != null) {
+                webView.post(() -> webView.evaluateJavascript(
+                    "if(window.josHandleNativeGoogleCallback){window.josHandleNativeGoogleCallback("
+                    + JSONObject.quote(callbackUrl) + ");}", null));
+            }
         }
     }
 
