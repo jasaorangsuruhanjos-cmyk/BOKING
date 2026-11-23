@@ -2,8 +2,6 @@ package id.jos.app;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebChromeClient;
@@ -19,7 +17,7 @@ import android.widget.ImageView;
 
 public class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 501;
-    private static final String HOME = "https://jasaorangsuruhanjos-cmyk.github.io/BOKING/";
+    private static final String HOME = "https://jasaorangsuruhan.my.id/";
     private WebView webView;
     private ImageView splashView;
     private ValueCallback<Uri[]> uploadCallback;
@@ -101,8 +99,9 @@ public class MainActivity extends Activity {
     private boolean handleUrl(Uri uri) {
         String scheme = uri.getScheme() == null ? "" : uri.getScheme();
         if ("http".equals(scheme) || "https".equals(scheme)) {
-            String host = uri.getHost() == null ? "" : uri.getHost();
-            if (host.equals("jasaorangsuruhanjos-cmyk.github.io")
+            String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase();
+            if (host.equals("jasaorangsuruhan.my.id")
+                    || host.equals("www.jasaorangsuruhan.my.id")
                     || host.endsWith(".supabase.co")) return false;
             try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); } catch (Exception ignored) {}
             return true;
