@@ -2475,6 +2475,9 @@ document.getElementById('overlay')?.addEventListener('click',function(event){
 
   // Tampilkan banner setelah halaman siap; jika event Chrome datang belakangan,
   // listener di atas akan tetap mengaktifkan tombol Instal otomatis.
+  // Popup instal aplikasi menjadi popup utama saat pengunjung membuka link JOS.
+  // Jika Chrome mengirim beforeinstallprompt, tombol langsung menjalankan prompt asli.
+  // Jika belum tersedia, banner tetap tampil dengan petunjuk instal yang sesuai.
   window.addEventListener('load',function(){
     bannerTimer=setTimeout(function(){
       if(!installPromptEvent){
@@ -2482,7 +2485,7 @@ document.getElementById('overlay')?.addEventListener('click',function(event){
         installButton.setAttribute('aria-label','Lihat cara memasang aplikasi JOS');
         showBanner();
       }
-    },1400);
+    },350);
   });
 })();
 </script>
@@ -2577,11 +2580,8 @@ document.getElementById('overlay')?.addEventListener('click',function(event){
       if(accountNav)accountNav.click();
     }
   });
-  // Timer disamakan dengan banner instal: muncul setelah 350 ms dan hilang setelah 7 detik.
-  window.setTimeout(function(){
-    popup.classList.add('show');popup.setAttribute('aria-hidden','false');
-    window.setTimeout(hide,7000);
-  },350);
+  // Popup affiliate tidak dimunculkan otomatis saat link utama dibuka.
+  // Akses pendaftaran affiliate tetap tersedia melalui menu Akun pelanggan.
 })();
 </script>
 
