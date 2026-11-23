@@ -11,6 +11,8 @@ import android.webkit.ValueCallback;
 import android.content.Intent;
 import android.net.Uri;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -20,6 +22,7 @@ public class MainActivity extends Activity {
     private static final String HOME = "https://jasaorangsuruhan.my.id/";
     private WebView webView;
     private ImageView splashView;
+    private FrameLayout splashCard;
     private ValueCallback<Uri[]> uploadCallback;
 
     @Override public void onCreate(Bundle savedInstanceState) {
@@ -31,13 +34,25 @@ public class MainActivity extends Activity {
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.WHITE);
 
+        splashCard = new FrameLayout(this);
+        GradientDrawable cardEdge = new GradientDrawable();
+        cardEdge.setColor(Color.TRANSPARENT);
+        cardEdge.setCornerRadius(dp(42));
+        splashCard.setBackground(cardEdge);
+        splashCard.setElevation(dp(22));
+        splashCard.setClipToOutline(true);
+
         splashView = new ImageView(this);
         splashView.setImageResource(R.drawable.jos_pwa_splash_new);
         splashView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        splashView.setBackgroundColor(Color.WHITE);
-        root.addView(splashView, new FrameLayout.LayoutParams(
+        splashView.setBackgroundColor(Color.TRANSPARENT);
+        splashCard.addView(splashView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT));
+        int splashSize = (int) (getResources().getDisplayMetrics().widthPixels * 0.88f);
+        FrameLayout.LayoutParams splashParams = new FrameLayout.LayoutParams(
+                splashSize, splashSize, Gravity.CENTER);
+        root.addView(splashCard, splashParams);
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.WHITE);
@@ -71,8 +86,8 @@ public class MainActivity extends Activity {
                     + "new MutationObserver(hideJosInstall).observe(document.documentElement,{childList:true,subtree:true});"
                     + "})();", null);
                 webView.setVisibility(View.VISIBLE);
-                splashView.animate().alpha(0f).setDuration(180).withEndAction(() -> {
-                    splashView.setVisibility(View.GONE);
+                splashCard.animate().alpha(0f).setDuration(180).withEndAction(() -> {
+                    splashCard.setVisibility(View.GONE);
                 }).start();
             }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -109,6 +124,10 @@ public class MainActivity extends Activity {
             webView.restoreState(savedInstanceState);
             if (webView.getUrl() == null) webView.loadUrl(HOME);
         }
+    }
+
+    private int dp(int value) {
+        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
 
     private boolean handleUrl(Uri uri) {
