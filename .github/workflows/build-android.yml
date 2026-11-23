@@ -13,6 +13,7 @@ on:
       - "capacitor.config.json"
       - ".github/workflows/build-android.yml"
       - "jos-icon-*.png"
+      - "jos-splash-screen.png"
       - "resources/**"
       - "android-branding/**"
       - "www/**"
@@ -47,7 +48,7 @@ jobs:
           set -euo pipefail
           mkdir -p www
           cp index.html www/index.html
-          cp manifest.json service-worker.js jos-icon-192.png jos-icon-512.png jos-icon-pwa-192-v3.png jos-icon-pwa-512-v3.png www/
+          cp manifest.json service-worker.js jos-icon-192.png jos-icon-512.png jos-icon-pwa-192-v3.png jos-icon-pwa-512-v3.png jos-splash-screen.png www/
 
       - name: Install Capacitor
         run: npm install

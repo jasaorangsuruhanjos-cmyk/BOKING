@@ -628,8 +628,48 @@ body.jos-order-open .bottom{display:none!important}
  }
 })();
 </script>
+
+<style id="jos-launch-splash-style">
+  #josLaunchSplash {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #ffffff;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 260ms ease, visibility 260ms ease;
+    pointer-events: auto;
+  }
+  #josLaunchSplash img {
+    display: block;
+    width: min(72vw, 41vh, 512px);
+    height: auto;
+    max-width: 72vw;
+    max-height: 41vh;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+  }
+  #josLaunchSplash.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #josLaunchSplash { transition: none; }
+  }
+</style>
 </head>
 <body>
+
+<div id="josLaunchSplash" role="img" aria-label="JOS — Jasa Orang Suruhan">
+  <img src="/jos-splash-screen.png?v=20261123" alt="JOS — Jasa Orang Suruhan" fetchpriority="high" decoding="async">
+</div>
 <div class="app">
 <header class="top">
 <div class="search-row">
@@ -2850,6 +2890,32 @@ josLoadCustomerOrders=async function(){
 })();
 </script>
 
+
+<script id="jos-launch-splash-controller">
+(() => {
+  const splash = document.getElementById('josLaunchSplash');
+  if (!splash) return;
+  const startedAt = Date.now();
+  let completed = false;
+  let hideTimer = null;
+
+  const hideSplash = () => {
+    if (completed) return;
+    completed = true;
+    const wait = Math.max(0, 1450 - (Date.now() - startedAt));
+    hideTimer = setTimeout(() => {
+      splash.classList.add('is-hidden');
+      setTimeout(() => splash.remove(), 300);
+    }, wait);
+  };
+
+  window.addEventListener('load', hideSplash, { once: true });
+  setTimeout(hideSplash, 2800);
+
+  const image = splash.querySelector('img');
+  if (image) image.addEventListener('error', hideSplash, { once: true });
+})();
+</script>
 </body>
 
 
