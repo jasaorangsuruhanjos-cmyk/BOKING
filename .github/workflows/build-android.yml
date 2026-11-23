@@ -157,7 +157,7 @@ jobs:
           set -euo pipefail
           mkdir -p assets
           cat android-branding/icon-512/*.b64 | tr -d '\r\n[:space:]' | base64 --decode > /tmp/jos-app-icon.webp
-          cat android-branding/splash-768/*.b64 | tr -d '\r\n[:space:]' | base64 --decode > /tmp/jos-splash.webp
+          cp android-app/app/src/main/res/drawable-nodpi/jos_pwa_splash_new.png /tmp/jos-splash.png
           python3 -m pip install --quiet Pillow
           python3 - <<'PY'
           from PIL import Image
@@ -165,12 +165,12 @@ jobs:
           from pathlib import Path
 
           icon_src=Image.open('/tmp/jos-app-icon.webp').convert('RGBA')
-          splash_src=Image.open('/tmp/jos-splash.webp').convert('RGBA')
+          splash_src=Image.open('/tmp/jos-splash.png').convert('RGBA')
           icon_src.load(); splash_src.load()
           if icon_src.size != (512,512):
               raise SystemExit(f'Wrong launcher source dimensions: {icon_src.size}')
-          if splash_src.size != (768,768):
-              raise SystemExit(f'Wrong splash source dimensions: {splash_src.size}')
+          if splash_src.size != (512,512):
+              raise SystemExit(f'Wrong restored 3D splash source dimensions: {splash_src.size}')
 
           # Keep the entire first image and its square canvas. Remove only the
           # black matte connected to the outer corners so Android can mask the
@@ -199,8 +199,8 @@ jobs:
           Image.new('RGBA',(1024,1024),(255,255,255,255)).save(
               'assets/icon-background.png',format='PNG',optimize=True)
 
-          # Native splash source is the user's SECOND image. Preserve its whole
-          # 1:1 white canvas and centered artwork. Only raster resolution changes.
+          # Restore the approved sharp 3D rounded-square JOS splash.
+          # Preserve the full 1:1 artwork; only raster resolution changes.
           splash_2732=splash_src.resize((2732,2732),Image.Resampling.LANCZOS)
           splash_2732.save('assets/splash.png',format='PNG',optimize=True)
           splash_2732.save('assets/splash-dark.png',format='PNG',optimize=True)
@@ -217,7 +217,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           from PIL import Image
-          source=Image.open('/tmp/jos-splash.webp').convert('RGBA')
+          source=Image.open('/tmp/jos-splash.png').convert('RGBA')
           source.load()
           root=Path('android/app/src/main/res')
           targets=sorted(root.glob('drawable*/splash.png'))
@@ -342,7 +342,7 @@ jobs:
               if ImageChops.difference(actual_icon,expected_icon).getbbox():
                   raise SystemExit('APK launcher icon does not match the supplied first image')
               actual_splash=Image.open(BytesIO(z.read('res/drawable-port-xxxhdpi-v4/splash.png'))).convert('RGBA')
-              source=Image.open('/tmp/jos-splash.webp').convert('RGBA')
+              source=Image.open('/tmp/jos-splash.png').convert('RGBA')
               w,h=actual_splash.size
               side=min(w,h)
               square=source.resize((side,side),Image.Resampling.LANCZOS)
