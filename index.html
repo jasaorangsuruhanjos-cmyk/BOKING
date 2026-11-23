@@ -780,14 +780,8 @@ body.jos-order-open .bottom{display:none!important}
  <label class="field" for="movingVehicle">Tambahan mobil / transportasi (opsional)</label>
  <select id="movingVehicle" class="mitra-count-select">
   <option value="">Tidak menggunakan tambahan mobil</option>
-  <option value="350000">Mobil bak / pickup — Rp350.000 per perjalanan</option>
-  <option value="400000">Blind van — Rp400.000 per perjalanan</option>
-  <option value="500000">Mobil engkel bak — Rp500.000 per perjalanan</option>
-  <option value="550000">Mobil engkel box — Rp550.000 per perjalanan</option>
-  <option value="700000">CDD bak — Rp700.000 per perjalanan</option>
-  <option value="750000">CDD box — Rp750.000 per perjalanan</option>
-  <option value="1000000">Fuso — Rp1.000.000 per perjalanan</option>
  </select>
+ <p id="movingDistanceStatus" class="choice-hint" role="status" aria-live="polite">Isi alamat awal dan alamat tujuan untuk menghitung jarak dan menampilkan tarif mobil yang sesuai.</p>
  <label class="field" style="display:flex;align-items:center;gap:8px">
   <input id="movingPacking" type="checkbox" style="width:17px;height:17px">
   Tambah jasa packing dengan bantuan — Rp75.000 per mitra
@@ -1077,6 +1071,8 @@ function openSheet(card){
  document.getElementById('serviceAddress').parentElement.hidden=isMoving;
  document.getElementById('movingFromAddress').value='';
  document.getElementById('movingToAddress').value='';
+ josMovingRouteRequest++;josMovingDistanceKm=null;josRenderMovingVehicleOptions(null);
+ const movingDistanceStatus=document.getElementById('movingDistanceStatus');if(movingDistanceStatus)movingDistanceStatus.textContent='Isi alamat awal dan alamat tujuan untuk menghitung jarak dan menampilkan tarif mobil yang sesuai.';
  document.getElementById('movingVehicle').value='';
  document.getElementById('movingPacking').checked=false;
  const options=isMoving?josMovingOptions():(JOS_SERVICE_OPTIONS[serviceName]||card.dataset.detail.split(';').map(x=>x.trim()).filter(Boolean));
@@ -1250,6 +1246,7 @@ async function sendOrder(){
   ];
   for(const [field,message] of requiredFields){if(!josValidateOrderField(field,message)){resetButton();return;}}
   if(!detail){toast('Pilih paket atau detail layanan terlebih dahulu.');document.getElementById('choiceToggle').scrollIntoView({behavior:'smooth',block:'center'});resetButton();return;}
+  if(isMoving&&document.getElementById('movingVehicle')?.value&&!(josMovingDistanceKm!==null&&josMovingDistanceKm<=30)){toast('Jarak belum berhasil dihitung atau melebihi 30 km. Periksa alamat atau hubungi admin untuk tarif di atas 30 km.');document.getElementById('movingDistanceStatus')?.scrollIntoView({behavior:'smooth',block:'center'});resetButton();return;}
   if(needsJobMedia&&!(jobMediaInput?.files?.length)){const status=document.getElementById('jobMediaStatus');if(status){status.textContent='Silakan unggah minimal 1 foto atau video sebelum mengirim pesanan.';status.className='job-media-status error';}josValidateOrderField(jobMediaInput,'Foto/video area kerja wajib diunggah untuk layanan ini.');resetButton();return;}
   const selectedMedia=needsJobMedia?Array.from(jobMediaInput.files):[];
   if(selectedMedia.length>5){toast('Maksimal 5 foto/video.');resetButton();return;}
@@ -2841,6 +2838,66 @@ josLoadCustomerOrders=async function(){
  });
 };
 
+// Tarif tambahan mobil pindahan otomatis mengikuti jarak rute jalan raya (OSRM).
+let josMovingDistanceKm=null;
+let josMovingRouteRequest=0;
+const JOS_MOVING_VEHICLES=[
+ {name:'Mobil bak / pickup',base:350000},
+ {name:'Blind van',base:400000},
+ {name:'Mobil engkel bak',base:500000},
+ {name:'Mobil engkel box',base:550000},
+ {name:'CDD bak',base:700000},
+ {name:'CDD box',base:750000},
+ {name:'Fuso',base:1000000}
+];
+function josFormatVehiclePrice(n){return 'Rp'+Math.round(n).toLocaleString('id-ID');}
+function josRenderMovingVehicleOptions(km){
+ const select=document.getElementById('movingVehicle');if(!select)return;
+ const previous=select.value;select.innerHTML='';
+ const none=document.createElement('option');none.value='';none.textContent='Tidak menggunakan tambahan mobil';select.appendChild(none);
+ if(km!==null){
+  const multiplier=km<=10?1:km<=20?2:km<=30?3:0;
+  if(multiplier){JOS_MOVING_VEHICLES.forEach(v=>{const price=v.base*multiplier;const option=document.createElement('option');option.value=String(price);option.textContent=v.name+' — '+josFormatVehiclePrice(price)+' per perjalanan';select.appendChild(option);});}
+ }
+ select.value=[...select.options].some(o=>o.value===previous)?previous:'';
+ updateOrderEstimate(document.getElementById('serviceDetail')?.value||'');
+}
+async function josMovingGeocode(address){
+ const value=String(address||'').trim();if(!value)throw new Error('Alamat belum lengkap');
+ const isCoord=value.match(/^(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)$/);
+ if(isCoord)return {lat:Number(isCoord[1]),lon:Number(isCoord[2])};
+ const response=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+encodeURIComponent(value+', Indonesia'),{headers:{'Accept':'application/json'}});
+ if(!response.ok)throw new Error('Pencarian alamat tidak tersedia');
+ const data=await response.json();if(!data[0])throw new Error('Alamat tidak ditemukan. Coba pilih titik di peta.');
+ return {lat:Number(data[0].lat),lon:Number(data[0].lon)};
+}
+async function josCalculateMovingDistance(){
+ const from=document.getElementById('movingFromAddress')?.value.trim()||'';
+ const to=document.getElementById('movingToAddress')?.value.trim()||'';
+ const status=document.getElementById('movingDistanceStatus');
+ const request=++josMovingRouteRequest;josMovingDistanceKm=null;josRenderMovingVehicleOptions(null);
+ if(!from||!to){if(status)status.textContent='Isi alamat awal dan alamat tujuan untuk menghitung jarak dan menampilkan tarif mobil yang sesuai.';return;}
+ if(status)status.textContent='Sedang menghitung jarak perjalanan berdasarkan rute jalan raya...';
+ try{
+  const [a,b]=await Promise.all([josMovingGeocode(from),josMovingGeocode(to)]);
+  const response=await fetch(`https://router.project-osrm.org/route/v1/driving/${a.lon},${a.lat};${b.lon},${b.lat}?overview=false`);
+  if(!response.ok)throw new Error('Perhitungan rute sedang tidak tersedia');
+  const data=await response.json();const route=data.routes?.[0];if(!route)throw new Error('Rute kendaraan tidak ditemukan');
+  if(request!==josMovingRouteRequest)return;
+  const km=route.distance/1000;josMovingDistanceKm=km;josRenderMovingVehicleOptions(km);
+  if(status){
+   if(km<=30){const zone=km<=10?'0–10 km (tarif dasar)':km<=20?'11–20 km (2× tarif dasar)':'21–30 km (3× tarif dasar)';status.textContent='Jarak rute kendaraan: '+km.toFixed(1)+' km. Tarif yang ditampilkan: '+zone+'.';}
+   else status.textContent='Jarak rute kendaraan: '+km.toFixed(1)+' km. Di atas 30 km, pilihan tambahan mobil belum tersedia. Silakan hubungi admin JOS untuk tarif.';
+  }
+ }catch(error){if(request!==josMovingRouteRequest)return;if(status)status.textContent='Jarak belum dapat dihitung: '+error.message+' Pastikan alamat jelas atau pilih titik di peta.';josRenderMovingVehicleOptions(null);}
+}
+['movingFromAddress','movingToAddress'].forEach(id=>{
+ const field=document.getElementById(id);if(!field)return;
+ field.addEventListener('change',josCalculateMovingDistance);
+ field.addEventListener('blur',josCalculateMovingDistance);
+ field.addEventListener('input',()=>{josMovingRouteRequest++;josMovingDistanceKm=null;josRenderMovingVehicleOptions(null);const status=document.getElementById('movingDistanceStatus');if(status)status.textContent='Alamat berubah. Selesaikan pengisian alamat untuk menghitung ulang jarak.';});
+});
+
 // Pemilih alamat gratis berbasis OpenStreetMap. Pencarian/reverse geocode hanya saat diminta pengguna.
 (function josInitAddressPicker(){
  const panel=document.getElementById('josAddressPicker'),mapNode=document.getElementById('josAddressPickerMap');
@@ -2853,7 +2910,7 @@ josLoadCustomerOrders=async function(){
  document.querySelectorAll('.jos-pick-address').forEach(b=>b.addEventListener('click',()=>openPicker(b.dataset.addressTarget)));
  document.getElementById('josCloseAddressPicker').addEventListener('click',()=>{panel.hidden=true;});
  document.getElementById('josUseMyLocation').addEventListener('click',()=>{if(!navigator.geolocation){status.textContent='GPS tidak didukung perangkat.';return;}status.textContent='Mengambil lokasi perangkat...';navigator.geolocation.getCurrentPosition(pos=>{const ll={lat:pos.coords.latitude,lng:pos.coords.longitude};map.setView(ll,17);setPoint(ll);status.textContent='Lokasi perangkat ditemukan.';},err=>{status.textContent='Lokasi tidak tersedia. Izinkan akses lokasi.';},{enableHighAccuracy:true,timeout:15000,maximumAge:0});});
- document.getElementById('josSavePickedAddress').addEventListener('click',async()=>{if(!target||!point){status.textContent='Pilih titik pada peta terlebih dahulu.';return;}const address=await reverseAddress(point);if(address){target.value=address;target.dispatchEvent(new Event('input',{bubbles:true}));status.textContent='Alamat berhasil diisi.';panel.hidden=true;}else{target.value=point.lat.toFixed(6)+', '+point.lng.toFixed(6);status.textContent='Nama alamat belum tersedia. Koordinat lokasi sudah diisi.';panel.hidden=true;}});
+ document.getElementById('josSavePickedAddress').addEventListener('click',async()=>{if(!target||!point){status.textContent='Pilih titik pada peta terlebih dahulu.';return;}const address=await reverseAddress(point);if(address){target.value=address;target.dispatchEvent(new Event('input',{bubbles:true}));target.dispatchEvent(new Event('change',{bubbles:true}));status.textContent='Alamat berhasil diisi.';panel.hidden=true;}else{target.value=point.lat.toFixed(6)+', '+point.lng.toFixed(6);status.textContent='Nama alamat belum tersedia. Koordinat lokasi sudah diisi.';panel.hidden=true;}});
 })();
 </script>
 
