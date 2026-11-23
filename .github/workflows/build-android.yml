@@ -47,7 +47,7 @@ jobs:
           set -euo pipefail
           mkdir -p www
           cp index.html www/index.html
-          cp manifest.json service-worker.js jos-icon-192.png jos-icon-512.png www/
+          cp manifest.json service-worker.js jos-icon-pwa-192-v3.png jos-icon-pwa-512-v3.png www/
           # Hide the browser-only install prompt inside the native Android app.
           # The public website source remains unchanged, so browser visitors still see it.
           python3 - <<'PY'
@@ -225,6 +225,36 @@ jobs:
           print('Approved second image:',splash_src.size,'-> uncropped white splash')
           PY
           npx capacitor-assets generate --android
+
+      - name: Generate matching versioned PWA icons
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet Pillow
+          python3 - <<'PY'
+          from PIL import Image
+          source=Image.open('assets/icon.png').convert('RGBA')
+          for size,name in [(192,'jos-icon-pwa-192-v3.png'),(512,'jos-icon-pwa-512-v3.png')]:
+              source.resize((size,size),Image.Resampling.LANCZOS).save(name,format='PNG',optimize=True)
+          print('Generated versioned PWA icons from the exact approved Android launcher artwork.')
+          PY
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('manifest.json')
+          m=json.loads(p.read_text())
+          m['icons']=[
+            {'src':'/jos-icon-pwa-192-v3.png','sizes':'192x192','type':'image/png','purpose':'any'},
+            {'src':'/jos-icon-pwa-512-v3.png','sizes':'512x512','type':'image/png','purpose':'any'}
+          ]
+          p.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\\n')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json jos-icon-pwa-192-v3.png jos-icon-pwa-512-v3.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Update JOS PWA install icons to approved Android branding [skip ci]"
+            git push origin HEAD:main
+          fi
 
       - name: Sync native project
         run: npx cap sync android
