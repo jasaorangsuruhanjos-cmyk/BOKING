@@ -102,12 +102,12 @@ jobs:
               "import android.net.Uri;",
               "import org.json.JSONObject;"
           ]
-          line_end=s.find("\\n")
+          line_end=s.find("\n")
           if line_end < 0: raise SystemExit("Java package declaration missing")
           for item in imports:
               if item not in s:
-                  s=s[:line_end+1]+item+"\\n"+s[line_end+1:]
-                  line_end=s.find("\\n")
+                  s=s[:line_end+1]+item+"\n"+s[line_end+1:]
+                  line_end=s.find("\n")
           if "new JosAndroidBridge()" not in s:
               pos=s.find("{",s.find("class MainActivity"))
               if pos < 0: raise SystemExit("MainActivity class declaration missing")
