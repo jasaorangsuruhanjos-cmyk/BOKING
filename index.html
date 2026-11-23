@@ -3224,3 +3224,10 @@ async function josConfirmOrderCompletion(orderId,button){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')josClosePhoto();});
 </script>
+
+<style id="jos-order-overlay-layer-fix">
+/* Formulir pesanan harus tampil di atas navigasi bawah dan banner instalasi. */
+#overlay{z-index:100300!important;pointer-events:none}
+#overlay.show{display:flex!important;pointer-events:auto!important}
+#overlay .sheet{position:relative;z-index:1;pointer-events:auto}
+</style>
