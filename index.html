@@ -2344,8 +2344,15 @@ function josRenderCustomerHistoryDates(){
  // Hari ini berada di ujung kanan deretan tanggal.
  strip.scrollLeft=strip.scrollWidth;
 }
+window.josPaymentProofFiles=window.josPaymentProofFiles||new Map();
+function josHandlePaymentProofFile(input,orderId){
+ const key=String(orderId),file=input?.files?.[0],info=josEl('josProofInfo-'+key);
+ if(!file){window.josPaymentProofFiles.delete(key);if(info)info.textContent='Belum ada foto dipilih.';return;}
+ window.josPaymentProofFiles.set(key,file);
+ if(info){info.textContent='✓ '+file.name+' ('+(file.size/1024/1024).toFixed(2)+' MB)';info.style.color='#0878d1';}
+}
 async function josSubmitPaymentProof(orderId,inputId,button){
- const file=josEl(inputId)?.files?.[0];
+ const file=window.josPaymentProofFiles?.get(String(orderId))||josEl(inputId)?.files?.[0];
  if(!file){alert('Pilih foto bukti pembayaran terlebih dahulu.');return;}
  if(!/^image\/(jpeg|png|webp)$/.test(file.type)){alert('Gunakan foto JPG, PNG, atau WebP.');return;}
  if(file.size>10*1024*1024){alert('Ukuran foto maksimal 10 MB.');return;}
@@ -2366,6 +2373,7 @@ async function josSubmitPaymentProof(orderId,inputId,button){
    throw error;
   }
   alert('Bukti pembayaran berhasil dikirim. Menunggu konfirmasi admin JOS.');
+  window.josPaymentProofFiles?.delete(String(orderId));
   await josLoadCustomerOrders();
  }catch(e){
   alert('Bukti pembayaran belum berhasil dikirim: '+(e.message||'Periksa koneksi dan coba lagi.'));
@@ -2462,7 +2470,7 @@ async function josLoadCustomerOrders(){
    if(i===2)extra=mitraProfiles;
    if(i===3&&hasMitra&&!verified&&!awaitingAdmin){
     const total=payment?.total_tagihan??o.harga_jasa??0;
-    extra=`<div class="jos-pay-panel"><b>Total tagihan: ${safe(rupiah(total))}</b><p>Silakan lakukan pembayaran melalui QRIS resmi JOS.</p><button type="button" class="jos-qris-open" onclick="josOpenPhoto('https://raw.githubusercontent.com/jasaorangsuruhanjos-cmyk/BOKING/main/qris-jos.png')" aria-label="Perbesar QRIS JOS"><img src="https://raw.githubusercontent.com/jasaorangsuruhanjos-cmyk/BOKING/main/qris-jos.png" alt="QRIS resmi JOS"><span>Ketuk untuk perbesar QRIS</span></button><label style="display:block;margin:10px 0 6px;font-weight:800">Unggah foto bukti pembayaran</label><input id="josProof-${safe(o.id)}" type="file" accept="image/jpeg,image/png,image/webp" style="width:100%;font-size:12px"><button type="button" onclick="josSubmitPaymentProof('${safe(o.id)}','josProof-${safe(o.id)}',this)" style="margin-top:10px;border:0;border-radius:10px;padding:11px 14px;background:#0878d1;color:#fff;font-weight:850">Kirim bukti pembayaran</button><small style="display:block;margin-top:7px;color:#718398">Pembayaran QRIS diverifikasi manual oleh Admin JOS.</small></div>`;
+    extra=`<div class="jos-pay-panel"><b>Total tagihan: ${safe(rupiah(total))}</b><p>Silakan lakukan pembayaran melalui QRIS resmi JOS.</p><button type="button" class="jos-qris-open" onclick="josOpenPhoto('https://raw.githubusercontent.com/jasaorangsuruhanjos-cmyk/BOKING/main/qris-jos.png')" aria-label="Perbesar QRIS JOS"><img src="https://raw.githubusercontent.com/jasaorangsuruhanjos-cmyk/BOKING/main/qris-jos.png" alt="QRIS resmi JOS"><span>Ketuk untuk perbesar QRIS</span></button><label style="display:block;margin:10px 0 6px;font-weight:800">Unggah foto bukti pembayaran</label><input id="josProof-${safe(o.id)}" type="file" accept="image/jpeg,image/png,image/webp" onchange="josHandlePaymentProofFile(this,&quot;${safe(o.id)}&quot;)" style="width:100%;font-size:12px"><div id="josProofInfo-${safe(o.id)}" aria-live="polite" style="margin-top:8px;font-size:13px;color:#718398">Belum ada foto dipilih.</div><button type="button" onclick="josSubmitPaymentProof('${safe(o.id)}','josProof-${safe(o.id)}',this)" style="margin-top:10px;border:0;border-radius:10px;padding:11px 14px;background:#0878d1;color:#fff;font-weight:850">Kirim bukti pembayaran</button><small style="display:block;margin-top:7px;color:#718398">Pembayaran QRIS diverifikasi manual oleh Admin JOS.</small></div>`;
    }
    if(i===3&&rejected)extra=`<div class="jos-pay-status">Bukti pembayaran sebelumnya ditolak. Silakan unggah ulang bukti pembayaran yang benar.${payment?.catatan_admin?'<br>Catatan admin: '+safe(payment.catatan_admin):''}</div>`;
    if(i===4&&awaitingAdmin)extra='<div class="jos-pay-status">Bukti pembayaran sudah dikirim. Mohon tunggu CS/Admin JOS memeriksa pembayaran Anda.</div>';
