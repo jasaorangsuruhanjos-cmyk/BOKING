@@ -14,7 +14,7 @@
 .back{width:38px;height:38px;border:1px solid #ffffff55;border-radius:12px;background:#ffffff20;color:#fff;font-size:22px;line-height:1}
 .brand{min-width:0;flex:1}.brand strong{display:block;font-size:15px}.brand small{display:block;font-size:10px;opacity:.86;margin-top:3px}
 .online{font-size:10px;white-space:nowrap}.online i{display:inline-block;width:7px;height:7px;background:#45e08a;border-radius:50%;margin-right:5px}
-.info{padding:10px 14px;background:#f4faff;border-bottom:1px solid var(--line);font-size:11px;color:#55718a;line-height:1.45}
+.info{padding:10px 14px;background:#f4faff;border-bottom:1px solid var(--line);font-size:11px;color:#55718a;line-height:1.45}.info[hidden]{display:none}
 #messages{flex:1;overflow:auto;padding:15px 13px 20px;display:flex;flex-direction:column;gap:10px;background:#f7faff}
 .bubble{max-width:86%;padding:10px 12px;border-radius:15px;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;box-shadow:0 2px 5px #153b5a0b}
 .bubble.customer{align-self:flex-end;background:#dff0ff;color:#17476d;border-bottom-right-radius:4px}
@@ -42,11 +42,11 @@
 <body>
 <div class="chat-app">
 <header class="head">
-<button class="back" id="back" aria-label="Kembali">‹</button>
+<button class="back" id="back" type="button" aria-label="Kembali ke halaman sebelumnya">‹</button>
 <div class="brand"><strong>Chat Admin JOS</strong><small>Jasa Orang Suruhan</small></div>
 <div class="online"><i></i>Online</div>
 </header>
-<div class="info">Anda bisa chat tanpa login menggunakan nama panggilan. Mode tamu mendukung pesan teks. Jika 30 menit tidak ada aktivitas percakapan, chat ditutup dan riwayat tamu dihapus otomatis.</div>
+<div class="info" id="guestInfo" hidden>Anda bisa chat tanpa login menggunakan nama panggilan. Mode tamu mendukung pesan teks. Jika 30 menit tidak ada aktivitas percakapan, chat ditutup dan riwayat tamu dihapus otomatis.</div>
 <div id="messages"><div class="welcome"><b>Halo! 👋</b>Silakan mulai percakapan dengan Admin JOS.</div></div>
 <div class="status" id="status">Memeriksa akun pelanggan...</div>
 <div class="tools" id="tools">
@@ -68,7 +68,13 @@ const db=window.supabase.createClient(
 );
 const $=id=>document.getElementById(id);
 let conversationId=null,pollTimer=null,busy=false;\nconst GUEST_SESSION_KEY='jos-chat-guest-session-v1';\nlet guestSession=null;\ntry{guestSession=JSON.parse(sessionStorage.getItem(GUEST_SESSION_KEY)||'null');}catch(_){guestSession=null;}
-$('back').addEventListener('click',()=>{location.href='./index.html';});
+$('back').addEventListener('click',()=>{
+ const ref=document.referrer;
+ let sameOriginReferrer=false;
+ try{sameOriginReferrer=!!ref&&new URL(ref).origin===location.origin;}catch(_){}
+ if(sameOriginReferrer&&history.length>1){history.back();return;}
+ location.assign('/');
+});
 function showGuestStart(message='Chat sebagai tamu tanpa login. Isi nama panggilan untuk mulai.') {
  const note=document.createElement('div');note.className='login-note';
  const title=document.createElement('b');title.textContent='Mulai Chat Admin JOS';
@@ -79,7 +85,7 @@ function showGuestStart(message='Chat sebagai tamu tanpa login. Isi nama panggil
  start.addEventListener('click',startGuestChat);
  note.append(title,document.createElement('br'),desc,name,start);
  $('messages').replaceChildren(note);$('form').style.display='none';$('tools').style.display='none';
- $('status').textContent='Mode tamu • tanpa akun';
+ $('guestInfo').hidden=false;\n $('status').textContent='Mode tamu • tanpa akun';
 }
 function showGuestClosed(message='Chat ditutup otomatis karena tidak aktif selama 30 menit. Riwayat percakapan telah dihapus.') {
  guestSession=null;sessionStorage.removeItem(GUEST_SESSION_KEY);conversationId=null;
@@ -157,7 +163,7 @@ async function load(){
    $('status').textContent='Chat tamu • '+guestSession.name+' • akan dihapus setelah 30 menit tanpa aktivitas.';
    return;
   }
-  guestSession=null;sessionStorage.removeItem(GUEST_SESSION_KEY);$('tools').style.display='flex';
+  guestSession=null;sessionStorage.removeItem(GUEST_SESSION_KEY);$('guestInfo').hidden=true;$('tools').style.display='flex';
   conversationId=conversationId||await ensureConversation(user);
   const {data,error}=await db.from('jos_chat_messages').select('id,sender_role,message,created_at,media_url,media_type,latitude,longitude,location_label,delivery_status,read_at,preview_url').eq('environment','production').eq('conversation_id',conversationId).order('created_at',{ascending:true}).limit(300);
   if(error)throw error;render(data||[]);$('form').style.display='flex';$('status').textContent='Percakapan Anda tersimpan dengan aman.';
