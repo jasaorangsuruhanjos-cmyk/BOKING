@@ -132,6 +132,13 @@ public class MainActivity extends Activity {
 
     private class JosAndroidBridge {
         @JavascriptInterface
+        public void openChat() {
+            runOnUiThread(() -> {
+                if (webView != null) webView.loadUrl(HOME + "chat.html");
+            });
+        }
+
+        @JavascriptInterface
         public void openGoogleAuth(String url) {
             try {
                 Uri target = Uri.parse(url);
