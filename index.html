@@ -2649,6 +2649,14 @@ document.getElementById('overlay')?.addEventListener('click',function(event){
   const closeButton=document.getElementById('josInstallClose');
   if(!banner||!installButton||!closeButton)return;
 
+  // Popup instalasi APK hanya untuk Android. Sembunyikan di iPhone/iPad.
+  const isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  if(isIOS){
+    banner.remove();
+    return;
+  }
+
   let autoHideTimer=null;
   function showBanner(){
     banner.classList.add('show');
