@@ -302,7 +302,7 @@ jobs:
           d=root/'drawable-nodpi'; d.mkdir(parents=True,exist_ok=True)
           source.resize((1024,1024),Image.Resampling.LANCZOS).save(d/'jos_splash_icon.png',optimize=True)
           bg=root/'drawable'; bg.mkdir(parents=True,exist_ok=True)
-          (bg/'jos_splash_background.xml').write_text('''<layer-list xmlns:android="http://schemas.android.com/apk/res/android"><item android:drawable="#087FE8"/><item><bitmap android:gravity="center" android:src="@drawable/jos_splash_icon" android:filter="true"/></item></layer-list>''')
+          (bg/'jos_splash_background.xml').write_text('''<layer-list xmlns:android="http://schemas.android.com/apk/res/android"><item><shape android:shape="rectangle"><solid android:color="#087FE8"/></shape></item><item><bitmap android:gravity="center" android:src="@drawable/jos_splash_icon" android:filter="true"/></item></layer-list>''')
           print('Installed the exact new square 3D logo as native launch artwork, with no crop.')
           PY
 
