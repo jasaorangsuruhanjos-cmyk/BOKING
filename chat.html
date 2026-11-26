@@ -67,7 +67,10 @@ const db=window.supabase.createClient(
  {auth:{persistSession:true,autoRefreshToken:true,flowType:'pkce',detectSessionInUrl:true,storageKey:'jos-customer-auth'}}
 );
 const $=id=>document.getElementById(id);
-let conversationId=null,pollTimer=null,busy=false;\nconst GUEST_SESSION_KEY='jos-chat-guest-session-v1';\nlet guestSession=null;\ntry{guestSession=JSON.parse(sessionStorage.getItem(GUEST_SESSION_KEY)||'null');}catch(_){guestSession=null;}
+let conversationId=null,pollTimer=null,busy=false;
+const GUEST_SESSION_KEY='jos-chat-guest-session-v1';
+let guestSession=null;
+try{guestSession=JSON.parse(sessionStorage.getItem(GUEST_SESSION_KEY)||'null');}catch(_){guestSession=null;}
 $('back').addEventListener('click',()=>{
  const ref=document.referrer;
  let sameOriginReferrer=false;
