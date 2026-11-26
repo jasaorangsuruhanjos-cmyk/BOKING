@@ -1,6 +1,9 @@
 package id.jos.app;
 
 import android.app.Activity;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.webkit.GeolocationPermissions;
 import android.os.Bundle;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -25,6 +28,9 @@ import java.io.InputStream;
 
 public class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 501;
+    private static final int GEOLOCATION_REQUEST = 502;
+    private GeolocationPermissions.Callback pendingGeoCallback;
+    private String pendingGeoOrigin;
     private static final String HOME = "https://jasaorangsuruhan.my.id/";
     private WebView webView;
     private ValueCallback<Uri[]> uploadCallback;
@@ -43,6 +49,7 @@ public class MainActivity extends Activity {
         webView.setVisibility(View.INVISIBLE);
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
+        s.setGeolocationEnabled(true);
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
         s.setLoadWithOverviewMode(true);
@@ -111,6 +118,32 @@ public class MainActivity extends Activity {
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override public void onGeolocationPermissionsShowPrompt(String origin,
+                    GeolocationPermissions.Callback callback) {
+                Uri requestedOrigin = Uri.parse(origin);
+                String host = requestedOrigin.getHost() == null ? "" : requestedOrigin.getHost().toLowerCase();
+                boolean trustedOrigin = "https".equals(requestedOrigin.getScheme())
+                    && (host.equals("jasaorangsuruhan.my.id") || host.equals("www.jasaorangsuruhan.my.id"));
+                if (!trustedOrigin) {
+                    callback.invoke(origin, false, false);
+                    return;
+                }
+                boolean fineGranted = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED;
+                boolean coarseGranted = checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED;
+                if (fineGranted || coarseGranted) {
+                    callback.invoke(origin, true, false);
+                    return;
+                }
+                pendingGeoOrigin = origin;
+                pendingGeoCallback = callback;
+                requestPermissions(new String[] {
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                }, GEOLOCATION_REQUEST);
+            }
+
             @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback,
                     FileChooserParams params) {
                 if (uploadCallback != null) uploadCallback.onReceiveValue(null);
@@ -209,6 +242,19 @@ public class MainActivity extends Activity {
         }
         try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); } catch (Exception ignored) {}
         return true;
+    }
+
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == GEOLOCATION_REQUEST && pendingGeoCallback != null) {
+            boolean granted = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED
+                || checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED;
+            pendingGeoCallback.invoke(pendingGeoOrigin, granted, false);
+            pendingGeoCallback = null;
+            pendingGeoOrigin = null;
+        }
     }
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
