@@ -14,6 +14,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -24,6 +25,9 @@ public class MainActivity extends Activity {
     private static final String HOME = "https://jasaorangsuruhan.my.id/";
     private WebView webView;
     private ValueCallback<Uri[]> uploadCallback;
+    private FrameLayout appRoot;
+    private View splashOverlay;
+    private boolean firstPageLoaded = false;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,6 +36,7 @@ public class MainActivity extends Activity {
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
 
         FrameLayout root = new FrameLayout(this);
+        appRoot = root;
         root.setBackgroundColor(Color.WHITE);
 
         webView = new WebView(this);
@@ -52,6 +57,16 @@ public class MainActivity extends Activity {
 
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
+                if (!firstPageLoaded) {
+                    firstPageLoaded = true;
+                    if (splashOverlay != null) {
+                        View overlay = splashOverlay;
+                        overlay.animate().alpha(0f).setDuration(260).withEndAction(() -> {
+                            if (appRoot != null) appRoot.removeView(overlay);
+                            splashOverlay = null;
+                        }).start();
+                    }
+                }
                 // Hide the website's PWA-install banner only inside this native APK.
                 view.evaluateJavascript("(function(){"
                     + "var hideJosInstall=function(){"
@@ -95,6 +110,9 @@ public class MainActivity extends Activity {
         root.addView(webView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT));
+        splashOverlay = createJosSplash();
+        root.addView(splashOverlay, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         setContentView(root);
 
         if (savedInstanceState == null) webView.loadUrl(HOME);
@@ -102,6 +120,65 @@ public class MainActivity extends Activity {
             webView.restoreState(savedInstanceState);
             if (webView.getUrl() == null) webView.loadUrl(HOME);
         }
+    }
+
+
+    // Full-screen native splash: official JOS artwork is used unchanged.
+    // Only the surrounding glass panel, lighting and depth effects are styled.
+    private View createJosSplash() {
+        FrameLayout scene = new FrameLayout(this);
+        GradientDrawable backdrop = new GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                new int[]{Color.rgb(4, 105, 207), Color.rgb(226, 244, 255), Color.rgb(10, 126, 225)});
+        scene.setBackground(backdrop);
+
+        View halo = new View(this);
+        GradientDrawable haloBg = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{0x00FFFFFF, 0x66FFFFFF, 0x00FFFFFF});
+        haloBg.setShape(GradientDrawable.OVAL);
+        halo.setBackground(haloBg);
+        FrameLayout.LayoutParams haloLp = new FrameLayout.LayoutParams(dp(330), dp(330), Gravity.CENTER);
+        haloLp.topMargin = dp(10);
+        scene.addView(halo, haloLp);
+
+        FrameLayout platform = new FrameLayout(this);
+        GradientDrawable platformBg = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{0xEEFFFFFF, 0xCCDBF2FF, 0xF8FFFFFF});
+        platformBg.setCornerRadius(dp(34));
+        platformBg.setStroke(dp(2), 0xAAFFFFFF);
+        platform.setBackground(platformBg);
+        platform.setElevation(dp(28));
+        platform.setTranslationZ(dp(12));
+
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(id.jos.app.R.drawable.jos_icon);
+        logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        logo.setAdjustViewBounds(true);
+        FrameLayout.LayoutParams logoLp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
+        int inset = dp(22);
+        logoLp.setMargins(inset, inset, inset, inset);
+        platform.addView(logo, logoLp);
+
+        FrameLayout.LayoutParams panelLp = new FrameLayout.LayoutParams(dp(310), dp(310), Gravity.CENTER);
+        scene.addView(platform, panelLp);
+
+        View base = new View(this);
+        GradientDrawable baseBg = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{0xFFBFEAFF, 0xFF087DCE, 0xFF064A9D});
+        baseBg.setCornerRadius(dp(60));
+        baseBg.setStroke(dp(2), 0x99FFFFFF);
+        base.setBackground(baseBg);
+        base.setElevation(dp(18));
+        FrameLayout.LayoutParams baseLp = new FrameLayout.LayoutParams(dp(340), dp(34), Gravity.CENTER);
+        baseLp.topMargin = dp(390);
+        scene.addView(base, baseLp);
+        return scene;
+    }
+
+    private int dp(int value) {
+        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
 
     private class JosAndroidBridge {
