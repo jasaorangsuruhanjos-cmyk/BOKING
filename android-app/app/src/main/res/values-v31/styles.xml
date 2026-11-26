@@ -1,8 +1,8 @@
 <resources>
     <style name="LaunchTheme" parent="@style/AppTheme">
-        <item name="android:windowSplashScreenBackground">#FFFFFF</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/jos_icon</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">#EAF5FF</item>
+        <item name="android:windowSplashScreenBackground">#E7F5FF</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/jos_splash_transparent</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">#E7F5FF</item>
         <item name="android:windowSplashScreenAnimationDuration">650</item>
     </style>
 </resources>
