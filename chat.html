@@ -85,7 +85,8 @@ function showGuestStart(message='Chat sebagai tamu tanpa login. Isi nama panggil
  start.addEventListener('click',startGuestChat);
  note.append(title,document.createElement('br'),desc,name,start);
  $('messages').replaceChildren(note);$('form').style.display='none';$('tools').style.display='none';
- $('guestInfo').hidden=false;\n $('status').textContent='Mode tamu • tanpa akun';
+ $('guestInfo').hidden=false;
+ $('status').textContent='Mode tamu • tanpa akun';
 }
 function showGuestClosed(message='Chat ditutup otomatis karena tidak aktif selama 30 menit. Riwayat percakapan telah dihapus.') {
  guestSession=null;sessionStorage.removeItem(GUEST_SESSION_KEY);conversationId=null;
