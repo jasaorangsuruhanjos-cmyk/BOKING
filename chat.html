@@ -338,7 +338,40 @@ $('locationBtn').addEventListener('click',()=>{
  $('status').textContent='Mengambil lokasi...';
  navigator.geolocation.getCurrentPosition(async pos=>{await sendChatMessage({mediaType:'location',coords:{latitude:pos.coords.latitude,longitude:pos.coords.longitude}});},err=>{$('status').textContent='Izin lokasi gagal atau ditolak: '+err.message;},{enableHighAccuracy:true,timeout:15000});
 });
-(async()=>{try{const user=await userNow();if(!user&&!guestSession){showGuestStart();}else{await load();}pollTimer=setInterval(load,5000);}catch(e){showGuestStart('Tidak dapat memeriksa akun. Anda tetap dapat memulai chat sebagai tamu.');pollTimer=setInterval(load,5000);}})();
+function josSessionDiagnostics(){
+ let found=[];
+ for(const key of JOS_AUTH_KEYS){try{if(localStorage.getItem(key))found.push(key);}catch(_){return 'Penyimpanan lokal APK tidak dapat dibaca';}}
+ return found.length?'Sesi tersimpan ('+found.join(', ')+')':'Tidak ditemukan sesi pelanggan pada penyimpanan halaman chat';
+}
+async function josWaitForCustomerSession(){
+ let lastError=null;
+ for(let attempt=0;attempt<3;attempt++){
+  try{
+   const user=await userNow();
+   if(user)return user;
+  }catch(e){lastError=e;}
+  if(attempt<2)await new Promise(resolve=>setTimeout(resolve,700*(attempt+1)));
+ }
+ if(lastError)throw lastError;
+ return null;
+}
+(async()=>{
+ try{
+  const user=await josWaitForCustomerSession();
+  if(user){await load();}
+  else{
+   const diag=josSessionDiagnostics();
+   showGuestStart(diag+'. Jika akun sudah login di beranda APK, kirim tangkapan layar pesan ini kepada Admin JOS.');
+   $('status').textContent='Sesi pelanggan belum terbaca di Chat Admin.';
+  }
+  pollTimer=setInterval(load,5000);
+ }catch(e){
+  const diag=josSessionDiagnostics();
+  showGuestStart('Pemeriksaan sesi gagal: '+(e?.message||'kesalahan tidak diketahui')+'. '+diag+'. Anda dapat mencoba chat tamu sementara.');
+  $('status').textContent='Gagal memulihkan sesi pelanggan.';
+  pollTimer=setInterval(load,5000);
+ }
+})();
 </script>
 </body>
 </html>
