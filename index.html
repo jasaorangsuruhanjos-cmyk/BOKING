@@ -1576,11 +1576,9 @@ async function josOpenChatWithSession(){
  }catch(error){
   console.warn('Sesi pelanggan tidak dapat disiapkan untuk Chat Admin:',error?.message||error);
  }
- if(window.JosAndroid&&typeof window.JosAndroid.openChat==='function'){
-  window.JosAndroid.openChat();
- }else{
-  window.location.href=new URL('chat.html',document.baseURI).href;
- }
+ // Gunakan navigasi halaman dalam WebView yang sama seperti website.
+ // Jangan memanggil native loadUrl(), karena itu dapat memutus sessionStorage transfer.
+ window.location.href=new URL('chat.html',document.baseURI).href;
 }
 const JOS_AFFILIATE_REF_KEY='jos_affiliate_referral_code';
 try{
