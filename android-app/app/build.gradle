@@ -8,9 +8,9 @@ android {
         applicationId 'id.jos.app'
         minSdk 23
         targetSdk 35
-        versionCode 10
-        versionName '1.0.9'
+        versionCode 11
+        versionName '1.1.0'
     }
 }
 
-// Rebuild: single official JOS splash presentation, release 1.0.9.
+// Rebuild: full-screen single JOS splash scene, release 1.1.0.
