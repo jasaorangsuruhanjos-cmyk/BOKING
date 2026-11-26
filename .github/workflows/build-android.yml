@@ -231,8 +231,8 @@ jobs:
           icon_src.load(); splash_src.load()
           if icon_src.size != (512,512):
               raise SystemExit(f'Wrong launcher source dimensions: {icon_src.size}')
-          if splash_src.size != (320,427):
-              raise SystemExit(f'Wrong approved 3D splash source dimensions: {splash_src.size}')
+          if splash_src.size != (1254,1254):
+              raise SystemExit(f'Wrong approved square 3D logo dimensions: {splash_src.size}')
 
           # Keep the entire first image and its square canvas. Remove only the
           # black matte connected to the outer corners so Android can mask the
@@ -261,14 +261,12 @@ jobs:
           Image.new('RGBA',(1024,1024),(255,255,255,255)).save(
               'assets/icon-background.png',format='PNG',optimize=True)
 
-          # Make a square intermediate only for Capacitor resource generation.
-          # The original portrait image is reapplied to each final splash resource.
-          from PIL import ImageOps
-          splash_2732=ImageOps.fit(splash_src,(2732,2732),method=Image.Resampling.LANCZOS,centering=(0.5,0.5))
+          # Preserve the approved square 3D logo without cropping or stretching.
+          splash_2732=splash_src.resize((2732,2732),Image.Resampling.LANCZOS)
           splash_2732.save('assets/splash.png',format='PNG',optimize=True)
           splash_2732.save('assets/splash-dark.png',format='PNG',optimize=True)
           print('Approved launcher image:',icon_src.size,'-> Android icon')
-          print('Approved single portrait 3D splash:',splash_src.size)
+          print('Approved square 3D JOS logo for native splash:',splash_src.size)
           PY
           npx capacitor-assets generate --android
 
@@ -282,15 +280,33 @@ jobs:
           import re
           p=Path("android/app/build.gradle")
           s=p.read_text()
-          s,n1=re.subn(r'versionCode\s+\d+', 'versionCode 14', s, count=1)
-          s,n2=re.subn(r'versionName\s+[\'"][^\'"]+[\'"]', "versionName '1.1.4'", s, count=1)
+          s,n1=re.subn(r'versionCode\s+\d+', 'versionCode 15', s, count=1)
+          s,n2=re.subn(r'versionName\s+[\'"][^\'"]+[\'"]', "versionName '1.1.5'", s, count=1)
           if n1 != 1 or n2 != 1:
               raise SystemExit(f"Expected one versionCode and versionName; found {n1}, {n2}")
           p.write_text(s)
-          print("JOS APK version set to 1.1.4 (versionCode 14)")
+          print("JOS APK version set to 1.1.5 (versionCode 15)")
           PY
 
-      - name: Remove duplicate small Android launch icon; keep single large web splash
+      - name: Install the approved 3D JOS logo as the single native splash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          root=Path('android/app/src/main/res')
+          source=Image.open('/tmp/jos-splash.webp').convert('RGBA')
+          source.load()
+          if source.size != (1254,1254):
+              raise SystemExit(f'Unexpected 3D logo size: {source.size}')
+          d=root/'drawable-nodpi'; d.mkdir(parents=True,exist_ok=True)
+          source.resize((1024,1024),Image.Resampling.LANCZOS).save(d/'jos_splash_icon.png',optimize=True)
+          bg=root/'drawable'; bg.mkdir(parents=True,exist_ok=True)
+          (bg/'jos_splash_background.xml').write_text('''<layer-list xmlns:android="http://schemas.android.com/apk/res/android"><item android:drawable="#087FE8"/><item><bitmap android:gravity="center" android:src="@drawable/jos_splash_icon" android:filter="true"/></item></layer-list>''')
+          print('Installed the exact new square 3D logo as native launch artwork, with no crop.')
+          PY
+
+      - name: Configure the single native 3D splash and remove the web duplicate
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -310,7 +326,7 @@ jobs:
           if not base.exists():
               raise SystemExit('Base Android styles.xml not found')
           base_text=base.read_text()
-          base_text=re.sub(r'(<item\b[^>]*\bname=["\']android:windowBackground["\'][^>]*>).*?(</item>)',r'\1#087FE8\2',base_text,flags=re.S)
+          base_text=re.sub(r'(<item\b[^>]*\bname=["\']android:windowBackground["\'][^>]*>).*?(</item>)',r'\1@drawable/jos_splash_background\2',base_text,flags=re.S)
           base.write_text(base_text)
           style_pattern=re.compile(r'<style\b(?=[^>]*\bname=["\']'+re.escape(theme)+r'["\'])[^>]*>.*?</style>',re.S)
           base_style=style_pattern.search(base_text)
@@ -331,16 +347,16 @@ jobs:
                   return pattern.sub(replacement,xml,count=1)
               return xml.replace('</style>',f'        <item name="{name}">{value}</item>\n    </style>',1)
 
-          style=put_item(style,'android:windowSplashScreenAnimatedIcon','@drawable/splash')
+          style=put_item(style,'android:windowSplashScreenAnimatedIcon','@drawable/jos_splash_icon')
           style=put_item(style,'android:windowSplashScreenBackground','#087FE8')
           if existing:
               target_text=target_text[:existing.start()]+style+target_text[existing.end():]
           else:
               target_text=target_text.replace('</resources>',style+'\n</resources>')
           target.write_text(target_text)
-          if '@drawable/splash' not in target.read_text():
-              raise SystemExit('Failed to apply the JOS 3D artwork to the Android system splash')
-          print(f'Android launch theme {theme}: JOS 3D artwork replaces the blank system splash.')
+          if '@drawable/jos_splash_icon' not in target.read_text():
+              raise SystemExit('Failed to apply the new 3D JOS logo to the Android system splash')
+          print(f'Android launch theme {theme}: new 3D JOS logo replaces the blank system splash.')
           PY
 
       - name: Preserve the exact square splash artwork on every Android screen size
@@ -479,7 +495,7 @@ jobs:
                   raise SystemExit('APK splash does not match the approved single full-screen 3D artwork')
               print('APK package integrity: OK')
               print('Launcher icon: exact match to supplied first image (Android sizes rasterized only)')
-              print('Splash screen: one full-screen 3D artwork; native duplicate icon transparent')
+              print('Splash screen: single native 3D JOS logo; HTML duplicate disabled')
           PY
 
       - name: Upload APK artifact
