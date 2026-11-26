@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0756a4">
+<title>Chat Admin — JOS</title>
+<link rel="icon" href="jos-icon-192.png">
+<style>
+:root{--blue:#0878d1;--deep:#0756a4;--ink:#17283b;--muted:#738398;--line:#e5edf4}
+*{box-sizing:border-box}body{margin:0;background:#f3f7fb;color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+.chat-app{max-width:600px;height:100dvh;margin:auto;background:#fff;display:flex;flex-direction:column;box-shadow:0 0 35px #173b6012}
+.head{background:linear-gradient(135deg,var(--blue),var(--deep));color:#fff;padding:calc(12px + env(safe-area-inset-top)) 15px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 14px #003d7b22}
+.back{width:38px;height:38px;border:1px solid #ffffff55;border-radius:12px;background:#ffffff20;color:#fff;font-size:22px;line-height:1}
+.brand{min-width:0;flex:1}.brand strong{display:block;font-size:15px}.brand small{display:block;font-size:10px;opacity:.86;margin-top:3px}
+.online{font-size:10px;white-space:nowrap}.online i{display:inline-block;width:7px;height:7px;background:#45e08a;border-radius:50%;margin-right:5px}
+.info{padding:10px 14px;background:#f4faff;border-bottom:1px solid var(--line);font-size:11px;color:#55718a;line-height:1.45}
+#messages{flex:1;overflow:auto;padding:15px 13px 20px;display:flex;flex-direction:column;gap:10px;background:#f7faff}
+.bubble{max-width:86%;padding:10px 12px;border-radius:15px;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;box-shadow:0 2px 5px #153b5a0b}
+.bubble.customer{align-self:flex-end;background:#dff0ff;color:#17476d;border-bottom-right-radius:4px}
+.bubble.admin{align-self:flex-start;background:#fff;border:1px solid #e1eaf2;color:#263e52;border-bottom-left-radius:4px}
+.bubble time{display:block;font-size:9px;opacity:.58;margin-top:5px;text-align:right}
+.ticks{font-size:12px;letter-spacing:-3px;margin-left:5px;color:#8495a5}
+.ticks.read{color:#1688e8}
+.welcome{margin:auto;text-align:center;max-width:280px;color:#6e8296;font-size:12px;line-height:1.6}
+.welcome b{display:block;font-size:16px;color:#234b6c;margin-bottom:5px}
+.status{min-height:24px;padding:5px 13px;background:#fff;color:#718398;font-size:10px;border-top:1px solid var(--line)}
+.form{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line)}
+.form input{flex:1;min-width:0;border:1px solid #d7e3ed;border-radius:13px;padding:12px;font:inherit;font-size:13px;outline-color:var(--blue)}
+.form button{border:0;border-radius:12px;background:var(--blue);color:#fff;padding:0 17px;font-size:12px;font-weight:850}
+.form button:disabled{opacity:.5}
+.tools{display:flex;gap:8px;padding:8px 12px 0;background:#fff}
+.toolbtn{border:1px solid #d7e3ed;background:#f7fbff;color:#17649e;border-radius:10px;padding:8px 11px;font-size:12px}
+.media-preview{max-width:220px;max-height:220px;border-radius:10px;display:block;margin-top:6px}
+.video-preview-wrap{position:relative}.video-loading{display:block;font-size:10px;color:#738398;padding:5px 0}.video-loading[hidden]{display:none}
+.location-link{display:inline-block;margin-top:6px;color:#0878d1;text-decoration:underline}
+.login-note{margin:auto;padding:22px;text-align:center;font-size:13px;line-height:1.6;color:#60768b}
+.login-note button{margin-top:12px;border:0;border-radius:11px;background:var(--blue);color:#fff;padding:12px 18px;font-weight:800}
+@media(min-width:601px){body{padding:20px 0}.chat-app{height:calc(100dvh - 40px);border-radius:22px;overflow:hidden}}
+</style>
+</head>
+<body>
+<div class="chat-app">
+<header class="head">
+<button class="back" id="back" aria-label="Kembali">‹</button>
+<div class="brand"><strong>Chat Admin JOS</strong><small>Jasa Orang Suruhan</small></div>
+<div class="online"><i></i>Online</div>
+</header>
+<div class="info">Sampaikan pertanyaan atau kebutuhan Anda. Balasan Admin JOS akan muncul di halaman chat ini.</div>
+<div id="messages"><div class="welcome"><b>Halo! 👋</b>Silakan mulai percakapan dengan Admin JOS.</div></div>
+<div class="status" id="status">Memeriksa akun pelanggan...</div>
+<div class="tools">
+<button class="toolbtn" type="button" id="photoBtn">📷 Foto</button>
+<button class="toolbtn" type="button" id="videoBtn">🎥 Video</button>
+<button class="toolbtn" type="button" id="locationBtn">📍 Share lokasi</button>
+<input id="mediaFile" type="file" accept="image/*" hidden>
+<input id="videoFile" type="file" accept="video/*" hidden>
+</div>
+<form class="form" id="form"><input id="message" maxlength="4000" placeholder="Tulis pesan..." autocomplete="off"><button id="send" type="submit">Kirim</button></form>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
+<script>
+const db=window.supabase.createClient(
+ 'https://aqhfkcdglfijdtsgyzmq.supabase.co',
+ 'sb_publishable_Ymh1RsVe9Ba9No27l58jGA_hpD04lSw',
+ {auth:{persistSession:true,autoRefreshToken:true,flowType:'pkce',detectSessionInUrl:true,storageKey:'jos-customer-auth'}}
+);
+const $=id=>document.getElementById(id);
+let conversationId=null,pollTimer=null,busy=false;
+$('back').addEventListener('click',()=>{location.href='./index.html';});
+function showLogin(){ const note=document.createElement('div');note.className='login-note';note.append(document.createTextNode('Anda perlu login ke akun pelanggan JOS untuk menggunakan chat.'));note.append(document.createElement('br'));const back=document.createElement('button');back.type='button';back.textContent='Kembali dan Login';back.addEventListener('click',()=>{location.href='./index.html';});note.append(back);$('messages').replaceChildren(note);$('form').style.display='none';$('status').textContent='Login diperlukan';}
+async function userNow(){const {data,error}=await db.auth.getUser();if(error)throw error;return data.user;}
+async function ensureConversation(user){
+ const {data,error}=await db.from('jos_chat_conversations').select('id').eq('environment','production').eq('customer_id',user.id).order('created_at',{ascending:false}).limit(1).maybeSingle();
+ if(error)throw error;if(data)return data.id;
+ const created=await db.from('jos_chat_conversations').insert({environment:'production',customer_id:user.id,subject:'Bantuan JOS'}).select('id').single();
+ if(created.error)throw created.error;return created.data.id;
+}
+function render(rows){
+ const box=$('messages');let added=false;const nearBottom=(box.scrollHeight-box.scrollTop-box.clientHeight)<100;
+ if(!rows.length){
+  if(!box.querySelector('.welcome')){
+   const welcome=document.createElement('div');welcome.className='welcome';const title=document.createElement('b');title.textContent='Halo! 👋';
+   welcome.append(title,document.createTextNode('Silakan mulai percakapan dengan Admin JOS.'));box.replaceChildren(welcome);
+  }
+  return;
+ }
+ const welcome=box.querySelector('.welcome');if(welcome)welcome.remove();
+ rows.forEach(row=>{
+  let bubble=box.querySelector('[data-message-id="'+row.id+'"]');
+  if(bubble){
+   const ticks=bubble.querySelector('.ticks');
+   if(ticks){
+    ticks.className='ticks'+(row.delivery_status==='read'?' read':'');
+    ticks.textContent=row.delivery_status==='sent'?'✓':'✓✓';
+    ticks.title=row.delivery_status==='read'?'Admin sudah membalas percakapan ini':row.delivery_status==='delivered'?'Notifikasi diterima Telegram admin':'Pesan tersimpan';
+   }
+   return;
+  }
+  bubble=document.createElement('div');bubble.dataset.messageId=row.id;
+  bubble.className='bubble '+(row.sender_role==='customer'?'customer':'admin');
+  if(row.message)bubble.append(document.createTextNode(row.message));
+  if(row.media_type==='image'&&row.media_url){
+   const link=document.createElement('a');link.href=row.media_url;link.target='_blank';link.rel='noopener';
+   const img=document.createElement('img');img.src=row.media_url;img.className='media-preview';img.alt='Foto chat';link.append(img);bubble.append(link);
+  }
+  if(row.media_type==='video'&&(row.preview_url||row.media_url)){
+   const wrap=document.createElement('div');wrap.className='video-preview-wrap';
+   const video=document.createElement('video');video.src=row.preview_url||row.media_url;video.controls=true;video.playsInline=true;video.preload='metadata';video.setAttribute('webkit-playsinline','');video.className='media-preview';
+   video.addEventListener('waiting',()=>{const status=bubble.querySelector('.video-loading');if(status)status.hidden=false;});
+   video.addEventListener('playing',()=>{const status=bubble.querySelector('.video-loading');if(status)status.hidden=true;});
+   video.addEventListener('canplay',()=>{const status=bubble.querySelector('.video-loading');if(status)status.hidden=true;});
+   const status=document.createElement('span');status.className='video-loading';status.hidden=true;status.textContent='Memuat video…';
+   wrap.append(video,status);bubble.append(wrap);
+  }
+  if(row.media_type==='location'&&row.latitude!=null&&row.longitude!=null){
+   const link=document.createElement('a');link.className='location-link';link.href='https://www.google.com/maps?q='+row.latitude+','+row.longitude;link.target='_blank';link.rel='noopener';link.textContent=row.location_label||'Buka lokasi di Google Maps';bubble.append(link);
+  }
+  const time=document.createElement('time');time.textContent=new Date(row.created_at).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  if(row.sender_role==='customer'){
+   const ticks=document.createElement('span');ticks.className='ticks'+(row.delivery_status==='read'?' read':'');
+   ticks.textContent=row.delivery_status==='sent'?'✓':'✓✓';
+   ticks.title=row.delivery_status==='read'?'Admin sudah membalas percakapan ini':row.delivery_status==='delivered'?'Notifikasi diterima Telegram admin':'Pesan tersimpan';time.append(ticks);
+  }
+  bubble.append(time);box.append(bubble);added=true;
+ });
+ if(added&&nearBottom)box.scrollTop=box.scrollHeight;
+}
+async function load(){
+ if(busy)return;busy=true;
+ try{
+  const user=await userNow();if(!user){showLogin();return;}
+  conversationId=conversationId||await ensureConversation(user);
+  const {data,error}=await db.from('jos_chat_messages').select('id,sender_role,message,created_at,media_url,media_type,latitude,longitude,location_label,delivery_status,read_at,preview_url').eq('environment','production').eq('conversation_id',conversationId).order('created_at',{ascending:true}).limit(300);
+  if(error)throw error;render(data||[]);$('status').textContent='Percakapan Anda tersimpan dengan aman.';
+ }catch(e){$('status').textContent='Chat belum dapat dimuat: '+(e.message||'Periksa koneksi.');}
+ finally{busy=false;}
+}
+async function compressVideo720(file){
+ if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream) return null;
+ const sourceUrl=URL.createObjectURL(file),video=document.createElement('video');
+ video.src=sourceUrl;video.muted=false;video.playsInline=true;video.preload='auto';
+ try{
+  await new Promise((resolve,reject)=>{video.onloadedmetadata=resolve;video.onerror=()=>reject(new Error('Video tidak dapat dibaca'));});
+  const scale=Math.min(1,1280/video.videoWidth,720/video.videoHeight);
+  const width=Math.max(2,Math.round(video.videoWidth*scale/2)*2),height=Math.max(2,Math.round(video.videoHeight*scale/2)*2);
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+  const ctx=canvas.getContext('2d');const stream=canvas.captureStream(24);
+  let audioContext=null;
+  try{audioContext=new (window.AudioContext||window.webkitAudioContext)();const source=audioContext.createMediaElementSource(video);const audioOut=audioContext.createMediaStreamDestination();source.connect(audioOut);audioOut.stream.getAudioTracks().forEach(t=>stream.addTrack(t));await audioContext.resume();}catch(_){}
+  const mime=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/webm;codecs=vp8,opus','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
+  if(!mime)return null;
+  const recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:1400000,audioBitsPerSecond:96000});
+  const chunks=[];recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data);};
+  const finished=new Promise((resolve,reject)=>{recorder.onstop=()=>resolve(new Blob(chunks,{type:recorder.mimeType}));recorder.onerror=()=>reject(new Error('Kompresi video gagal'));});
+  const draw=()=>{if(video.paused||video.ended)return;ctx.drawImage(video,0,0,width,height);requestAnimationFrame(draw);};
+  await new Promise((resolve,reject)=>{video.onseeked=resolve;video.currentTime=0;setTimeout(resolve,300);});
+  recorder.start(1000);await video.play();draw();
+  await new Promise(resolve=>{video.onended=resolve;});
+  recorder.stop();const blob=await finished;
+  stream.getTracks().forEach(t=>t.stop());if(audioContext)await audioContext.close();
+  if(!blob||blob.size<1000||blob.size>=file.size)return null;
+  const ext=blob.type.includes('mp4')?'mp4':'webm';
+  return new File([blob],file.name.replace(/\.[^.]+$/,'')+'-720p.'+ext,{type:blob.type});
+ }catch(e){return null;}finally{URL.revokeObjectURL(sourceUrl);}
+}
+async function uploadChatFile(file,path,onProgress){
+ if(file.size>6*1024*1024){
+  const {data:{session},error:sessionError}=await db.auth.getSession();
+  if(sessionError||!session?.access_token)throw new Error('Sesi login berakhir. Silakan login ulang.');
+  if(!window.tus?.Upload)throw new Error('Modul unggah belum termuat.');
+  await new Promise(async(resolve,reject)=>{
+   const upload=new window.tus.Upload(file,{endpoint:'https://aqhfkcdglfijdtsgyzmq.storage.supabase.co/storage/v1/upload/resumable',
+    headers:{authorization:'Bearer '+session.access_token},retryDelays:[0,3000,5000,10000,20000],uploadDataDuringCreation:true,removeFingerprintOnSuccess:true,chunkSize:6*1024*1024,
+    metadata:{bucketName:'jos-chat-production',objectName:path,contentType:file.type||'application/octet-stream',cacheControl:'3600'},
+    onError:reject,onProgress:(sent,total)=>onProgress?.(sent,total),onSuccess:resolve});
+   try{const previous=await upload.findPreviousUploads();if(previous.length)upload.resumeFromPreviousUpload(previous[0]);upload.start();}catch(e){reject(e);}
+  });
+ }else{const {error}=await db.storage.from('jos-chat-production').upload(path,file,{contentType:file.type,upsert:false});if(error)throw error;}
+ return db.storage.from('jos-chat-production').getPublicUrl(path).data.publicUrl;
+}
+async function sendChatMessage({message='',file=null,mediaType=null,coords=null}){
+ $('send').disabled=true;$('status').textContent=file?'Menyiapkan unggahan…':'Mengirim...';
+ try{
+  const user=await userNow();if(!user)throw new Error('Silakan login kembali.');
+  conversationId=conversationId||await ensureConversation(user);
+  let mediaUrl=null,previewUrl=null,originalMediaUrl=null;
+  if(file){
+   let uploadFile=file;
+   if(mediaType==='video'){
+    $('status').textContent='Mengoptimalkan video untuk chat…';
+    const compressed=await compressVideo720(file);
+    if(compressed){uploadFile=compressed;$('status').textContent='Video dioptimalkan. Menyimpan file…';}
+    else $('status').textContent='Menyimpan video asli…';
+   }
+   const ext=(uploadFile.name.split('.').pop()||(mediaType==='image'?'jpg':'mp4')).toLowerCase().replace(/[^a-z0-9]/g,'');
+   const path=user.id+'/'+crypto.randomUUID()+'.'+ext;
+   mediaUrl=await uploadChatFile(uploadFile,path,(sent,total)=>{
+    $('status').textContent='Mengunggah '+(mediaType==='video'?'video':'foto')+'… '+Math.round(sent/total*100)+'%';
+   });
+   if(mediaType==='video' && uploadFile!==file){
+    const originalExt=(file.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'');
+    const originalPath=user.id+'/'+crypto.randomUUID()+'-original.'+originalExt;
+    previewUrl=mediaUrl;
+    originalMediaUrl=await uploadChatFile(file,originalPath,(sent,total)=>{
+     $('status').textContent='Menyimpan video asli… '+Math.round(sent/total*100)+'%';
+    });
+   }
+  }
+  const row={environment:'production',conversation_id:conversationId,customer_id:user.id,sender_role:'customer',
+   message:message||(mediaType==='image'?'Mengirim foto':mediaType==='video'?'Mengirim video':'Membagikan lokasi'),
+   media_url:mediaUrl,preview_url:previewUrl,original_media_url:originalMediaUrl,media_type:mediaType};
+  if(coords){row.latitude=coords.latitude;row.longitude=coords.longitude;row.location_label='Lokasi pelanggan';}
+  const {data:inserted,error}=await db.from('jos_chat_messages').insert(row).select('id').single();if(error)throw error;
+  await db.from('jos_chat_conversations').update({updated_at:new Date().toISOString()}).eq('id',conversationId);
+  await load();
+  const notify=await db.functions.invoke('jos-staging-chat',{body:{action:'notify_customer_message',environment:'production',conversation_id:conversationId,message_id:inserted.id}});
+  $('status').textContent=notify.error||notify.data?.success!==true?'Pesan tersimpan. Notifikasi Telegram belum aktif.':'Pesan terkirim ke Admin JOS.';
+ }catch(err){$('status').textContent='Gagal mengirim: '+(err.message||'Coba lagi.');}
+ finally{$('send').disabled=false;}
+}
+$('form').addEventListener('submit',async e=>{e.preventDefault();const message=$('message').value.trim();if(!message)return;$('message').value='';await sendChatMessage({message});});
+$('photoBtn').addEventListener('click',()=>$('mediaFile').click());
+$('videoBtn').addEventListener('click',()=>$('videoFile').click());
+$('mediaFile').addEventListener('change',async e=>{const file=e.target.files[0];if(file){if(file.size>50*1024*1024){$('status').textContent='Ukuran file maksimal 50 MB.';}else await sendChatMessage({file,mediaType:'image'});}e.target.value='';});
+$('videoFile').addEventListener('change',async e=>{const file=e.target.files[0];if(file){if(file.size>50*1024*1024){$('status').textContent='Ukuran file maksimal 50 MB.';}else await sendChatMessage({file,mediaType:'video'});}e.target.value='';});
+$('locationBtn').addEventListener('click',()=>{
+ if(!navigator.geolocation){$('status').textContent='Perangkat tidak mendukung lokasi.';return;}
+ $('status').textContent='Mengambil lokasi...';
+ navigator.geolocation.getCurrentPosition(async pos=>{await sendChatMessage({mediaType:'location',coords:{latitude:pos.coords.latitude,longitude:pos.coords.longitude}});},err=>{$('status').textContent='Izin lokasi gagal atau ditolak: '+err.message;},{enableHighAccuracy:true,timeout:15000});
+});
+(async()=>{try{const user=await userNow();if(!user){showLogin();return;}await load();pollTimer=setInterval(load,5000);}catch(e){$('status').textContent='Gagal memeriksa sesi: '+e.message;}})();
+</script>
+</body>
+</html>
