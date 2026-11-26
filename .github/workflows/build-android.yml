@@ -17,6 +17,7 @@ on:
       - "resources/**"
       - "android-branding/**"
       - "www/**"
+      - "chat.html"
 
 permissions:
   contents: write
@@ -249,12 +250,12 @@ jobs:
           import re
           p=Path("android/app/build.gradle")
           s=p.read_text()
-          s,n1=re.subn(r'versionCode\s+\d+', 'versionCode 9', s, count=1)
-          s,n2=re.subn(r'versionName\s+[\'"][^\'"]+[\'"]', "versionName '1.0.8'", s, count=1)
+          s,n1=re.subn(r'versionCode\s+\d+', 'versionCode 10', s, count=1)
+          s,n2=re.subn(r'versionName\s+[\'"][^\'"]+[\'"]', "versionName '1.0.9'", s, count=1)
           if n1 != 1 or n2 != 1:
               raise SystemExit(f"Expected one versionCode and versionName; found {n1}, {n2}")
           p.write_text(s)
-          print("JOS APK version set to 1.0.8 (versionCode 9)")
+          print("JOS APK version set to 1.0.9 (versionCode 10)")
           PY
 
       - name: Remove duplicate small Android launch icon; keep single large web splash
