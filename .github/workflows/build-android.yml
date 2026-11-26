@@ -231,7 +231,7 @@ jobs:
           icon_src.load(); splash_src.load()
           if icon_src.size != (512,512):
               raise SystemExit(f'Wrong launcher source dimensions: {icon_src.size}')
-          if splash_src.size != (256,256):
+          if splash_src.size != (192,192):
               raise SystemExit(f'Wrong approved square 3D logo dimensions: {splash_src.size}')
 
           # Keep the entire first image and its square canvas. Remove only the
