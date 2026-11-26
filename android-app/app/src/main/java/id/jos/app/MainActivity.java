@@ -19,6 +19,9 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.util.Base64;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 
 public class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 501;
@@ -53,15 +56,17 @@ public class MainActivity extends Activity {
 
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
-                // APK-only polish for the website's single HTML splash.
-                // Keep the official logo image unchanged; style only its background and depth.
+                // APK-only splash replacement: read the bundled image natively and
+                // inject it as a data URI so WebView does not depend on file URL access.
+                final String josSplashData = getSplashDataUri();
                 view.evaluateJavascript("(function(){"
                     + "var s=document.getElementById('josLaunchSplash');if(!s)return;"
                     + "s.style.setProperty('background','#ffffff','important');"
                     + "s.style.setProperty('background-image','none','important');"
                     + "s.style.setProperty('perspective','none','important');"
                     + "var img=s.querySelector('img');if(img){"
-                    + "img.src='file:///android_asset/jos_splash_3d.webp';"
+                    + "img.src=" + JSONObject.quote(josSplashData) + ";"
+                    + "img.alt='JOS - Jasa Orang Suruhan';"
                     + "img.style.setProperty('display','block','important');"
                     + "img.style.setProperty('width','min(90vw,680px)','important');"
                     + "img.style.setProperty('height','auto','important');"
@@ -124,6 +129,19 @@ public class MainActivity extends Activity {
         else {
             webView.restoreState(savedInstanceState);
             if (webView.getUrl() == null) webView.loadUrl(HOME);
+        }
+    }
+
+
+    private String getSplashDataUri() {
+        try (InputStream in = getAssets().open("jos_splash_3d.webp");
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int count;
+            while ((count = in.read(buffer)) != -1) out.write(buffer, 0, count);
+            return "data:image/webp;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
+        } catch (Exception e) {
+            return "";
         }
     }
 
