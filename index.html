@@ -683,6 +683,9 @@ body.jos-order-open .bottom{display:none!important}
 <style id="jos-seo-accessibility">
 .jos-seo-sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 </style>
+<style id="jos-order-chat-button-style">
+.jos-order-chat-btn{display:block;width:100%;margin:9px 0 7px;border:0;border-radius:11px;padding:11px 13px;background:linear-gradient(135deg,#0878d1,#0756a4);color:#fff;font-size:12px;font-weight:850;box-shadow:0 4px 12px #0756a426}
+</style>
 </head>
 <body>
 
@@ -2275,6 +2278,12 @@ josEl('josMitraProfileForm').onsubmit=async e=>{
   finally{submit.disabled=false;submit.textContent='Simpan pendaftaran mitra';}
 };
 
+function josOpenOrderChat(orderId,role){
+ const url=new URL('order-chat.html',document.baseURI);
+ url.searchParams.set('order_id',String(orderId));
+ url.searchParams.set('role',role==='mitra'?'mitra':'customer');
+ window.location.href=url.href;
+}
 async function josMitraLoadOrders(){
   const {data:{user}}=await josMitraDb.auth.getUser();if(!user)return;
   const {data:profile,error:pe}=await josMitraDb.from('jos_mitra_profiles').select('*').eq('id',user.id).maybeSingle();
@@ -2285,7 +2294,7 @@ async function josMitraLoadOrders(){
   ]);
   if(available.error)throw available.error;if(mine.error)throw mine.error;
   josEl('josMitraAvailable').innerHTML=(available.data||[]).map(o=>`<div class="portal-item"><strong>${o.nama_layanan||'Layanan'}</strong><small>${o.kode_order||''} • ${o.alamat||''}<br>${o.deskripsi||''}</small><button onclick="josMitraTake('${o.id}')">Ambil order</button></div>`).join('')||'<p>Belum ada order tersedia.</p>';
-  josEl('josMitraMine').innerHTML=(mine.data||[]).map(o=>`<div class="portal-item"><strong>${o.nama_layanan||'Layanan'} — ${o.status||''}</strong><small>${o.kode_order||''} • ${o.alamat||''}</small><button onclick="josMitraUpdate('${o.id}','Dalam proses pengerjaan')">Mulai kerja</button><button onclick="josMitraUpdate('${o.id}','Selesai')">Selesai</button></div>`).join('')||'<p>Belum ada order yang diambil.</p>';
+  josEl('josMitraMine').innerHTML=(mine.data||[]).map(o=>{const s=String(o.status||'').toLowerCase();const active=s!=='selesai'&&!s.includes('batal')&&!s.includes('cancel');return `<div class="portal-item"><strong>${o.nama_layanan||'Layanan'} — ${o.status||''}</strong><small>${o.kode_order||''} • ${o.alamat||''}</small>${active?`<button class="jos-order-chat-btn" onclick="josOpenOrderChat('${o.id}','mitra')">💬 Chat pelanggan</button>`:''}<button onclick="josMitraUpdate('${o.id}','Dalam proses pengerjaan')">Mulai kerja</button><button onclick="josMitraUpdate('${o.id}','Selesai')">Selesai</button></div>`;}).join('')||'<p>Belum ada order yang diambil.</p>';
 }
 async function josMitraTake(id){
   try{
@@ -2524,7 +2533,9 @@ async function josLoadCustomerOrders(){
   const isLiveJourney=!cancelled&&!isDone&&!awaitingCustomer&&(orderStatus.includes('perjalanan')||orderStatus.includes('menuju lokasi')||orderStatus.includes('pengerjaan')||orderStatus.includes('sedang dikerjakan'));
   const gpsKey=String(o.id).replace(/[^a-zA-Z0-9_-]/g,'');
   const liveGpsPanel=isLiveJourney?`<section class="jos-live-gps" data-jos-live-gps="${safe(o.id)}"><h4>📍 Lokasi Mitra JOS — Live</h4><p>Posisi Mitra diperbarui otomatis selama perjalanan menuju lokasi Anda.</p><div class="jos-live-gps-meta"><span class="jos-gps-distance">Jarak: menghitung...</span><span class="jos-gps-eta">Estimasi: menghitung...</span></div><div class="jos-live-gps-map" id="jos-live-gps-map-${gpsKey}"></div><a class="jos-gps-directions" href="https://www.openstreetmap.org/search?query=${encodeURIComponent(o.alamat||'')}" target="_blank" rel="noopener">Buka peta / navigasi</a><small class="gps-updated">Menunggu sinyal GPS Mitra...</small></section>`:'';
-  const detailContent=`<small style="display:block;line-height:1.7;color:#617789;margin-top:10px">Nama pemesan: ${safe(o.nama_pelanggan)}<br>WhatsApp: ${safe(o.whatsapp_pelanggan)}<br>Alamat: ${safe(o.alamat)}<br>Detail: ${safe(o.deskripsi)}<br>Total tagihan: ${safe(rupiah(payment?.total_tagihan??o.harga_jasa??0))}<br>Status pembayaran: ${safe(payment?.status_pembayaran||o.payment_status||'Menunggu pembayaran')}<br>Status database: ${safe(o.status||'Diterima')}<br>Dibuat: ${o.dibuat_pada?new Date(o.dibuat_pada).toLocaleString('id-ID'):'-'}</small>${liveGpsPanel}${timeline}${customerConfirmHtml}`;
+  const assignedMitra=(mitraByOrder.get(String(o.id))||[]).length>0;
+  const chatButton=assignedMitra&&!cancelled&&!isDone?`<button type="button" class="jos-order-chat-btn" onclick="josOpenOrderChat('${safe(o.id)}','customer')">💬 Chat mitra</button>`:'';
+  const detailContent=`<small style="display:block;line-height:1.7;color:#617789;margin-top:10px">Nama pemesan: ${safe(o.nama_pelanggan)}<br>WhatsApp: ${safe(o.whatsapp_pelanggan)}<br>Alamat: ${safe(o.alamat)}<br>Detail: ${safe(o.deskripsi)}<br>Total tagihan: ${safe(rupiah(payment?.total_tagihan??o.harga_jasa??0))}<br>Status pembayaran: ${safe(payment?.status_pembayaran||o.payment_status||'Menunggu pembayaran')}<br>Status database: ${safe(o.status||'Diterima')}<br>Dibuat: ${o.dibuat_pada?new Date(o.dibuat_pada).toLocaleString('id-ID'):'-'}</small>${liveGpsPanel}${timeline}${customerConfirmHtml}${chatButton}`;
   return isDone?`<article class="order-track-card customer-done-card"><details><summary>${summary}</summary><div class="customer-done-details">${detailContent}</div></details></article>`:`<article class="order-track-card">${summary}${detailContent}</article>`;
  }).join('')||'<p>Belum ada pesanan pada tanggal ini.</p>';
 }
