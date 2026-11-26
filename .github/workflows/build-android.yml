@@ -297,7 +297,7 @@ jobs:
           root=Path('android/app/src/main/res')
           source=Image.open('/tmp/jos-splash.webp').convert('RGBA')
           source.load()
-          if source.size != (1254,1254):
+          if source.size != (192,192):
               raise SystemExit(f'Unexpected 3D logo size: {source.size}')
           d=root/'drawable-nodpi'; d.mkdir(parents=True,exist_ok=True)
           source.resize((1024,1024),Image.Resampling.LANCZOS).save(d/'jos_splash_icon.png',optimize=True)
