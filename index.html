@@ -772,6 +772,7 @@ body.jos-order-open .bottom{display:none!important}
 <button data-drawer="services" type="button"><span>▦</span>Layanan</button>
 <button data-drawer="orders" type="button"><span>▤</span>Pesanan</button>
 <button data-drawer="account" type="button"><span>☺</span>Akun Pelanggan</button>
+<button data-drawer="chat" type="button"><span>💬</span>Chat Admin</button>
 </nav>
 <div class="drawer-footer">Bersama JOS, semua pasti beres!</div>
 </aside>
@@ -1445,7 +1446,7 @@ function closeMainMenu(){mainDrawer.classList.remove('open');menuBackdrop.classL
 document.getElementById('openMainMenu').addEventListener('click',openMainMenu);
 document.getElementById('closeMainMenu').addEventListener('click',closeMainMenu);
 menuBackdrop.addEventListener('click',closeMainMenu);
-document.querySelectorAll('[data-drawer]').forEach(btn=>btn.addEventListener('click',()=>{const dest=btn.dataset.drawer;closeMainMenu();if(dest==='home'){showHome();}else if(dest==='services'){document.getElementById('categories').scrollIntoView({behavior:'smooth',block:'start'});}else if(dest==='orders'){openJosPortal('orders');}else if(dest==='account'){openJosPortal('customer');}}));
+document.querySelectorAll('[data-drawer]').forEach(btn=>btn.addEventListener('click',()=>{const dest=btn.dataset.drawer;closeMainMenu();if(dest==='home'){showHome();}else if(dest==='services'){document.getElementById('categories').scrollIntoView({behavior:'smooth',block:'start'});}else if(dest==='orders'){openJosPortal('orders');}else if(dest==='account'){openJosPortal('customer');}else if(dest==='chat'){if(window.JosAndroid&&typeof window.JosAndroid.openChat==='function'){window.JosAndroid.openChat();}else{window.location.href=new URL('chat.html',document.baseURI).href;}}}));
 const searchInput=document.getElementById('search');
 document.getElementById('searchBox').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')searchInput.focus()});
 document.getElementById('searchFocus').addEventListener('click',()=>{const term=searchInput.value.trim();if(term){filterServices(term);const found=cards.some(card=>card.style.display!=='none');if(!found){openCustomService(term);return;}document.getElementById('cards').scrollIntoView({behavior:'smooth',block:'start'});}else{searchInput.focus();}});
@@ -3098,6 +3099,8 @@ document.addEventListener('click',event=>{
 
 <style id="jos-chat-launcher-style">
 #josChatLauncher{position:fixed!important;right:16px!important;bottom:112px!important;z-index:2147483000!important;border:0!important;border-radius:999px!important;background:#0878d1!important;color:#fff!important;padding:14px 17px!important;font-weight:900!important;font-size:14px!important;box-shadow:0 8px 25px #073c6a66!important;display:flex!important;align-items:center!important;gap:7px!important;visibility:visible!important;opacity:1!important}
+body.jos-order-open #josChatLauncher{display:none!important}
+.main-drawer .drawer-links button[data-drawer="chat"]{color:#075da8}
 @media(max-width:520px){#josChatLauncher{right:14px!important;bottom:108px!important}}
 </style>
 <script id="jos-chat-launcher-script">
