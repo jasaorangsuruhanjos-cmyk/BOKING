@@ -40,7 +40,7 @@ public class MainActivity extends Activity {
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.WHITE);
-        webView.setVisibility(View.VISIBLE);
+        webView.setVisibility(View.INVISIBLE);
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -79,7 +79,13 @@ public class MainActivity extends Activity {
                     + "img.style.setProperty('transform','none','important');"
                     + "img.style.setProperty('transition','none','important');"
                     + "}"
-                    + "})();", null);
+                    + "})();", new ValueCallback<String>() {
+                        @Override public void onReceiveValue(String value) {
+                            // Reveal the WebView only after the old web splash has been
+                            // replaced by the new bundled 3D logo. Prevents a double splash.
+                            view.setVisibility(View.VISIBLE);
+                        }
+                    });
                 // Hide the website's PWA-install banner only inside this native APK.
                 view.evaluateJavascript("(function(){"
                     + "var hideJosInstall=function(){"
