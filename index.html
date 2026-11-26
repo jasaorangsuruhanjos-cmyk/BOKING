@@ -2585,8 +2585,8 @@ document.getElementById('overlay')?.addEventListener('click',function(event){
 
 <style id="jos-install-banner-style">
 #josInstallBanner{
-  position:fixed;left:50%;bottom:94px;transform:translate(-50%,18px);
-  width:min(460px,calc(100% - 28px));z-index:100200;
+  position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);bottom:auto;transform:translate(-50%,-18px);
+  width:min(460px,calc(100% - 28px));z-index:2147483000;
   display:flex;align-items:center;gap:11px;padding:12px 42px 12px 12px;
   border:1px solid #cfe3f4;border-radius:17px;background:#fff;
   box-shadow:0 12px 34px rgba(5,48,84,.24);
@@ -2600,7 +2600,7 @@ document.getElementById('overlay')?.addEventListener('click',function(event){
 #josInstallBanner .jos-install-action{border:0;border-radius:10px;padding:9px 11px;background:#0878d1;color:#fff;font-size:10px;font-weight:900;white-space:nowrap}
 #josInstallBanner .jos-install-close{position:absolute;right:8px;top:7px;width:27px;height:27px;border:0;border-radius:50%;background:#edf3f8;color:#526a7e;font-size:19px;line-height:1}
 @media(max-width:370px){#josInstallBanner{gap:8px;padding-left:9px}#josInstallBanner img{width:41px;height:41px;flex-basis:41px}#josInstallBanner .jos-install-action{padding:8px;font-size:9px}}
-@media(min-width:521px){#josInstallBanner{bottom:115px}}
+@media(min-width:521px){#josInstallBanner{top:18px}}
 </style>
 <div id="josInstallBanner" role="dialog" aria-label="Instal aplikasi JOS" aria-hidden="true">
   <img src="jos-icon-192.png" alt="Logo JOS Pelanggan">
@@ -2618,13 +2618,17 @@ document.getElementById('overlay')?.addEventListener('click',function(event){
   const closeButton=document.getElementById('josInstallClose');
   if(!banner||!installButton||!closeButton)return;
 
+  let autoHideTimer=null;
   function showBanner(){
     banner.classList.add('show');
     banner.setAttribute('aria-hidden','false');
+    clearTimeout(autoHideTimer);
+    autoHideTimer=setTimeout(hideBanner,5000);
   }
   function hideBanner(){
     banner.classList.remove('show');
     banner.setAttribute('aria-hidden','true');
+    clearTimeout(autoHideTimer);
   }
 
   closeButton.addEventListener('click',hideBanner);
