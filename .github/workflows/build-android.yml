@@ -69,7 +69,7 @@ jobs:
               raise SystemExit('Splash override already exists')
           if '</head>' not in s:
               raise SystemExit('HTML head closing tag missing')
-          s=s.replace('</head>',css+'\\n</head>',1)
+          s=s.replace('</head>',css+'\n</head>',1)
           p.write_text(s)
           print('APK web layer configured with exactly one full-screen 3D splash.')
           PY
@@ -311,7 +311,7 @@ jobs:
           if not base.exists():
               raise SystemExit('Base Android styles.xml not found')
           base_text=base.read_text()
-          base_text=re.sub(r'(<item\\b[^>]*\\bname=[\"\\\']android:windowBackground[\"\\\'][^>]*>).*?(</item>)',r'\\1#087FE8\\2',base_text,flags=re.S)
+          base_text=re.sub(r'(<item\b[^>]*\bname=["\']android:windowBackground["\'][^>]*>).*?(</item>)',r'\1#087FE8\2',base_text,flags=re.S)
           base.write_text(base_text)
           style_pattern=re.compile(r'<style\b(?=[^>]*\bname=["\']'+re.escape(theme)+r'["\'])[^>]*>.*?</style>',re.S)
           base_style=style_pattern.search(base_text)
@@ -472,7 +472,7 @@ jobs:
               if ImageChops.difference(actual_icon,expected_icon).getbbox():
                   raise SystemExit('APK launcher icon does not match the supplied first image')
               actual_splash=Image.open(BytesIO(z.read('res/drawable-port-xxxhdpi-v4/splash.png'))).convert('RGBA')
-              source=Image.open('/tmp/jos-splash.png').convert('RGBA')
+              source=Image.open('/tmp/jos-splash.webp').convert('RGBA')
               from PIL import ImageOps
               w,h=actual_splash.size
               expected=ImageOps.fit(source,(w,h),method=Image.Resampling.LANCZOS,centering=(0.5,0.5))
