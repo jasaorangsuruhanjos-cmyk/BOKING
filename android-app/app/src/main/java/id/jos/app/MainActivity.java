@@ -152,7 +152,7 @@ public class MainActivity extends Activity {
         platform.setTranslationZ(dp(12));
 
         ImageView logo = new ImageView(this);
-        logo.setImageResource(id.jos.app.R.drawable.jos_icon);
+        logo.setImageResource(id.jos.app.R.drawable.jos_pwa_splash);
         logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
         logo.setAdjustViewBounds(true);
         FrameLayout.LayoutParams logoLp = new FrameLayout.LayoutParams(
@@ -164,16 +164,6 @@ public class MainActivity extends Activity {
         FrameLayout.LayoutParams panelLp = new FrameLayout.LayoutParams(dp(310), dp(310), Gravity.CENTER);
         scene.addView(platform, panelLp);
 
-        View base = new View(this);
-        GradientDrawable baseBg = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{0xFFBFEAFF, 0xFF087DCE, 0xFF064A9D});
-        baseBg.setCornerRadius(dp(60));
-        baseBg.setStroke(dp(2), 0x99FFFFFF);
-        base.setBackground(baseBg);
-        base.setElevation(dp(18));
-        FrameLayout.LayoutParams baseLp = new FrameLayout.LayoutParams(dp(340), dp(34), Gravity.CENTER);
-        baseLp.topMargin = dp(390);
-        scene.addView(base, baseLp);
         return scene;
     }
 
