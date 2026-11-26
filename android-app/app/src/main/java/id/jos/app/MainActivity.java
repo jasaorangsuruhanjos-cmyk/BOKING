@@ -53,6 +53,19 @@ public class MainActivity extends Activity {
 
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
+                // APK-only polish for the website's single HTML splash.
+                // Keep the official logo image unchanged; style only its background and depth.
+                view.evaluateJavascript("(function(){"
+                    + "var s=document.getElementById('josLaunchSplash');if(!s)return;"
+                    + "s.style.setProperty('background','radial-gradient(ellipse at 50% 42%,#ffffff 0%,#eaf6ff 48%,#c9e5ff 100%)','important');"
+                    + "s.style.setProperty('perspective','1100px','important');"
+                    + "var img=s.querySelector('img');if(img){"
+                    + "img.style.setProperty('border-radius','34px','important');"
+                    + "img.style.setProperty('box-shadow','0 26px 55px rgba(0,55,115,.24),0 8px 18px rgba(0,55,115,.16),inset 0 2px 4px rgba(255,255,255,.95)','important');"
+                    + "img.style.setProperty('transform','perspective(1100px) rotateX(3deg) translateY(-3px)','important');"
+                    + "img.style.setProperty('transition','transform 700ms ease, box-shadow 700ms ease','important');"
+                    + "}"
+                    + "})();", null);
                 // Hide the website's PWA-install banner only inside this native APK.
                 view.evaluateJavascript("(function(){"
                     + "var hideJosInstall=function(){"
