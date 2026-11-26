@@ -1561,6 +1561,24 @@ const josAdminDb=window.supabase.createClient(
   {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'jos-admin-auth'}}
 );
 
+// Dipanggil khusus oleh APK agar sesi Supabase dipindahkan sebelum navigasi chat.
+window.josOpenChatFromNative=async function(){
+ try{
+  const {data,error}=await josDb.auth.getSession();
+  if(error)throw error;
+  const session=data?.session;
+  if(session?.access_token&&session?.refresh_token){
+   sessionStorage.setItem('jos-chat-session-transfer',JSON.stringify({
+    access_token:session.access_token,refresh_token:session.refresh_token
+   }));
+  }else{
+   sessionStorage.removeItem('jos-chat-session-transfer');
+  }
+ }catch(error){
+  console.warn('Persiapan sesi Chat Admin gagal:',error?.message||error);
+ }
+ window.location.href=new URL('chat.html',document.baseURI).href;
+};
 const JOS_AFFILIATE_REF_KEY='jos_affiliate_referral_code';
 try{
  const referralFromUrl=new URLSearchParams(location.search).get('ref');
