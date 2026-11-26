@@ -60,10 +60,11 @@ public class MainActivity extends Activity {
                     + "s.style.setProperty('background','#ffffff','important');"
                     + "s.style.setProperty('perspective','1100px','important');"
                     + "var img=s.querySelector('img');if(img){"
-                    + "img.style.setProperty('border-radius','34px','important');"
-                    + "img.style.setProperty('box-shadow','0 26px 55px rgba(0,55,115,.24),0 8px 18px rgba(0,55,115,.16),inset 0 2px 4px rgba(255,255,255,.95)','important');"
-                    + "img.style.setProperty('transform','perspective(1100px) rotateX(3deg) translateY(-3px)','important');"
-                    + "img.style.setProperty('transition','transform 700ms ease, box-shadow 700ms ease','important');"
+                    + "img.style.setProperty('border-radius','0','important');"
+                    + "img.style.setProperty('box-shadow','none','important');"
+                    + "img.style.setProperty('transform','none','important');"
+                    + "img.style.setProperty('transition','none','important');"
+                    + "img.style.setProperty('object-fit','contain','important');"
                     + "}"
                     + "})();", null);
                 // Hide the website's PWA-install banner only inside this native APK.
