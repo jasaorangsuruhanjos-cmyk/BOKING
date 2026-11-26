@@ -23,8 +23,6 @@ public class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 501;
     private static final String HOME = "https://jasaorangsuruhan.my.id/";
     private WebView webView;
-    private ImageView splashView;
-    private FrameLayout splashCard;
     private ValueCallback<Uri[]> uploadCallback;
 
     @Override public void onCreate(Bundle savedInstanceState) {
@@ -36,29 +34,9 @@ public class MainActivity extends Activity {
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.WHITE);
 
-        splashCard = new FrameLayout(this);
-        GradientDrawable cardEdge = new GradientDrawable();
-        cardEdge.setColor(Color.TRANSPARENT);
-        cardEdge.setCornerRadius(dp(42));
-        splashCard.setBackground(cardEdge);
-        splashCard.setElevation(dp(22));
-        splashCard.setClipToOutline(true);
-
-        splashView = new ImageView(this);
-        splashView.setImageResource(R.drawable.jos_pwa_splash_new);
-        splashView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        splashView.setBackgroundColor(Color.TRANSPARENT);
-        splashCard.addView(splashView, new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT));
-        int splashSize = (int) (getResources().getDisplayMetrics().widthPixels * 0.88f);
-        FrameLayout.LayoutParams splashParams = new FrameLayout.LayoutParams(
-                splashSize, splashSize, Gravity.CENTER);
-        root.addView(splashCard, splashParams);
-
         webView = new WebView(this);
         webView.setBackgroundColor(Color.WHITE);
-        webView.setVisibility(View.INVISIBLE);
+        webView.setVisibility(View.VISIBLE);
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -89,10 +67,6 @@ public class MainActivity extends Activity {
                     + "hideJosInstall();"
                     + "new MutationObserver(hideJosInstall).observe(document.documentElement,{childList:true,subtree:true});"
                     + "})();", null);
-                webView.setVisibility(View.VISIBLE);
-                splashCard.animate().alpha(0f).setDuration(180).withEndAction(() -> {
-                    splashCard.setVisibility(View.GONE);
-                }).start();
             }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 return handleUrl(request.getUrl());
