@@ -226,10 +226,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    private int dp(int value) {
-        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
-    }
-
     private boolean handleUrl(Uri uri) {
         String scheme = uri.getScheme() == null ? "" : uri.getScheme();
         if ("http".equals(scheme) || "https".equals(scheme)) {
