@@ -142,6 +142,15 @@ jobs:
 
               private class JosAndroidBridge {
                   @JavascriptInterface
+                  public void goHome() {
+                      runOnUiThread(() -> {
+                          if (getBridge() != null && getBridge().getWebView() != null) {
+                              getBridge().getWebView().loadUrl("https://localhost/");
+                          }
+                      });
+                  }
+
+                  @JavascriptInterface
                   public void openChat() {
                       runOnUiThread(() -> {
                           if (getBridge() != null && getBridge().getWebView() != null) {
@@ -250,12 +259,12 @@ jobs:
           import re
           p=Path("android/app/build.gradle")
           s=p.read_text()
-          s,n1=re.subn(r'versionCode\s+\d+', 'versionCode 11', s, count=1)
-          s,n2=re.subn(r'versionName\s+[\'"][^\'"]+[\'"]', "versionName '1.1.0'", s, count=1)
+          s,n1=re.subn(r'versionCode\s+\d+', 'versionCode 12', s, count=1)
+          s,n2=re.subn(r'versionName\s+[\'"][^\'"]+[\'"]', "versionName '1.1.1'", s, count=1)
           if n1 != 1 or n2 != 1:
               raise SystemExit(f"Expected one versionCode and versionName; found {n1}, {n2}")
           p.write_text(s)
-          print("JOS APK version set to 1.1.0 (versionCode 11)")
+          print("JOS APK version set to 1.1.1 (versionCode 12)")
           PY
 
       - name: Remove duplicate small Android launch icon; keep single large web splash
