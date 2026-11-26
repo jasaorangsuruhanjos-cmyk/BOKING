@@ -348,8 +348,23 @@ function josSessionDiagnostics(){
  const origin='Origin chat: '+location.origin+'. Jumlah item penyimpanan: '+storageLength+'.';
  return found.length?origin+' Sesi ditemukan ('+found.join(', ')+').':origin+' Sesi pelanggan tidak ditemukan. Kunci yang ada: '+(allKeys.join(', ')||'(kosong)')+'.';
 }
+async function josRestoreTransferredCustomerSession(){
+ let raw=null;
+ try{raw=sessionStorage.getItem('jos-chat-session-transfer');sessionStorage.removeItem('jos-chat-session-transfer');}catch(_){}
+ if(!raw)return false;
+ let transferred;
+ try{transferred=JSON.parse(raw);}catch(_){return false;}
+ if(!transferred?.access_token||!transferred?.refresh_token)return false;
+ const {data,error}=await db.auth.setSession({
+  access_token:transferred.access_token,
+  refresh_token:transferred.refresh_token
+ });
+ if(error)throw error;
+ return !!data?.session?.user;
+}
 async function josWaitForCustomerSession(){
  let lastError=null;
+ try{if(await josRestoreTransferredCustomerSession())return await userNow();}catch(e){lastError=e;}
  for(let attempt=0;attempt<3;attempt++){
   try{
    const user=await userNow();
