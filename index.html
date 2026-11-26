@@ -3106,8 +3106,11 @@ document.addEventListener('click',event=>{
   if(!document.body||document.getElementById('josChatLauncher'))return;
   var b=document.createElement('button');b.id='josChatLauncher';b.type='button';b.textContent='💬 Chat Admin';
   b.addEventListener('click',function(){
-   var isNative=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
-   window.location.href=isNative?'https://jasaorangsuruhan.my.id/chat.html':new URL('chat.html',document.baseURI).href;
+   if(window.JosAndroid&&typeof window.JosAndroid.openChat==='function'){
+    window.JosAndroid.openChat();
+   }else{
+    window.location.href=new URL('chat.html',document.baseURI).href;
+   }
   });
   document.body.appendChild(b);
  }
