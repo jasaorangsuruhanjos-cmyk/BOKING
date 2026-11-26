@@ -141,6 +141,15 @@ jobs:
 
               private class JosAndroidBridge {
                   @JavascriptInterface
+                  public void openChat() {
+                      runOnUiThread(() -> {
+                          if (getBridge() != null && getBridge().getWebView() != null) {
+                              getBridge().getWebView().loadUrl("https://jasaorangsuruhan.my.id/chat.html");
+                          }
+                      });
+                  }
+
+                  @JavascriptInterface
                   public void openGoogleAuth(String url) {
                       try {
                           Uri target=Uri.parse(url);
@@ -232,6 +241,22 @@ jobs:
 
       - name: Sync native project
         run: npx cap sync android
+
+      - name: Set JOS Android version for Chat Admin bridge fix
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path("android/app/build.gradle")
+          s=p.read_text()
+          s=re.sub(r'versionCode\\s+\\d+', 'versionCode 9', s, count=1)
+          s=re.sub(r'versionName\\s+"[^"]+"', 'versionName "1.0.8"', s, count=1)
+          if "versionCode 9" not in s or 'versionName "1.0.8"' not in s:
+              raise SystemExit("Could not set JOS APK version 1.0.8")
+          p.write_text(s)
+          print("JOS APK version set to 1.0.8 (versionCode 9)")
+          PY
+
 
       - name: Remove duplicate small Android launch icon; keep single large web splash
         run: |
