@@ -8,9 +8,9 @@ android {
         applicationId 'id.jos.app'
         minSdk 23
         targetSdk 35
-        versionCode 8
-        versionName '1.0.7'
+        versionCode 9
+        versionName '1.0.8'
     }
 }
 
-// Rebuild trigger: Chat Admin native WebView navigation fix, release 1.0.7.
+// Rebuild: Chat Admin uses the same WebView session context as the website, release 1.0.8.
