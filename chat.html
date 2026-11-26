@@ -95,7 +95,7 @@ function showGuestClosed(message='Chat ditutup otomatis karena tidak aktif selam
  guestSession=null;sessionStorage.removeItem(GUEST_SESSION_KEY);conversationId=null;
  showGuestStart(message+' Mulai chat baru jika masih membutuhkan bantuan.');
 }
-async function userNow(){const {data,error}=await db.auth.getUser();if(error)throw error;return data.user;}
+async function userNow(){const {data,error}=await db.auth.getSession();if(error)throw error;return data.session?.user||null;}
 async function ensureConversation(user){
  const {data,error}=await db.from('jos_chat_conversations').select('id').eq('environment','production').eq('customer_id',user.id).order('created_at',{ascending:false}).limit(1).maybeSingle();
  if(error)throw error;if(data)return data.id;
