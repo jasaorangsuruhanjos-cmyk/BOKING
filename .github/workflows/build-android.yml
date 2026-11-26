@@ -62,8 +62,7 @@ jobs:
               raise SystemExit(f'Expected one legacy splash reference, found {s.count(old)}')
           s=s.replace(old,'/jos-splash-screen.webp?v=20261126',1)
           css='''<style id="jos-apk-single-splash-3d">
-          #josLaunchSplash{background:linear-gradient(180deg,#087fe8 0%,#b8e3ff 20%,#eef7ff 50%,#bcecff 82%,#087fe8 100%)!important}
-          #josLaunchSplash{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;overflow:hidden!important;z-index:2147483647!important}\n          #josLaunchSplash img{position:absolute!important;inset:0!important;display:block!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center center!important}
+          #josLaunchSplash{display:none!important}
           </style>'''
           if 'jos-apk-single-splash-3d' in s:
               raise SystemExit('Splash override already exists')
