@@ -12,3 +12,5 @@ android {
         versionName '1.0.7'
     }
 }
+
+// Rebuild trigger: Chat Admin native WebView navigation fix, release 1.0.7.
