@@ -134,7 +134,15 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void openChat() {
             runOnUiThread(() -> {
-                if (webView != null) webView.loadUrl(HOME + "chat.html");
+                if (webView != null) {
+                    // Keep the same WebView browsing context so the website can
+                    // transfer the active Supabase session before navigating to chat.
+                    webView.evaluateJavascript(
+                        "(function(){if(window.josOpenChatFromNative){window.josOpenChatFromNative();}"
+                        + "else{window.location.href='" + HOME + "chat.html';}})();",
+                        null
+                    );
+                }
             });
         }
 
