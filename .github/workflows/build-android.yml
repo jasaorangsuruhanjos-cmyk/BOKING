@@ -13,7 +13,7 @@ on:
       - "capacitor.config.json"
       - ".github/workflows/build-android.yml"
       - "jos-icon-*.png"
-      - "jos-splash-screen.png"
+      - "jos-splash-screen.webp"
       - "resources/**"
       - "android-branding/**"
       - "www/**"
@@ -49,7 +49,30 @@ jobs:
           set -euo pipefail
           mkdir -p www
           cp index.html www/index.html
-          cp manifest.json service-worker.js jos-icon-192.png jos-icon-512.png jos-icon-pwa-192-v3.png jos-icon-pwa-512-v3.png jos-splash-screen.png www/
+          cp manifest.json service-worker.js jos-icon-192.png jos-icon-512.png jos-icon-pwa-192-v3.png jos-icon-pwa-512-v3.png jos-splash-screen.webp www/
+
+      - name: Configure one full-screen 3D splash for APK only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('www/index.html')
+          s=p.read_text()
+          old='/jos-splash-screen.png?v=20261123'
+          if s.count(old) != 1:
+              raise SystemExit(f'Expected one legacy splash reference, found {s.count(old)}')
+          s=s.replace(old,'/jos-splash-screen.webp?v=20261126',1)
+          css='''<style id="jos-apk-single-splash-3d">
+          #josLaunchSplash{background:linear-gradient(180deg,#087fe8 0%,#b8e3ff 20%,#eef7ff 50%,#bcecff 82%,#087fe8 100%)!important}
+          #josLaunchSplash img{width:100vw!important;height:100dvh!important;max-width:100vw!important;max-height:100dvh!important;object-fit:contain!important}
+          </style>'''
+          if 'jos-apk-single-splash-3d' in s:
+              raise SystemExit('Splash override already exists')
+          if '</head>' not in s:
+              raise SystemExit('HTML head closing tag missing')
+          s=s.replace('</head>',css+'\\n</head>',1)
+          p.write_text(s)
+          print('APK web layer configured with exactly one full-screen 3D splash.')
+          PY
 
       - name: Install Capacitor
         run: npm install
@@ -197,7 +220,7 @@ jobs:
           set -euo pipefail
           mkdir -p assets
           cat android-branding/icon-512/*.b64 | tr -d '\r\n[:space:]' | base64 --decode > /tmp/jos-app-icon.webp
-          cp android-app/app/src/main/res/drawable-nodpi/jos_pwa_splash_new.png /tmp/jos-splash.png
+          cp jos-splash-screen.webp /tmp/jos-splash.webp
           python3 -m pip install --quiet Pillow
           python3 - <<'PY'
           from PIL import Image
@@ -205,12 +228,12 @@ jobs:
           from pathlib import Path
 
           icon_src=Image.open('/tmp/jos-app-icon.webp').convert('RGBA')
-          splash_src=Image.open('/tmp/jos-splash.png').convert('RGBA')
+          splash_src=Image.open('/tmp/jos-splash.webp').convert('RGBA')
           icon_src.load(); splash_src.load()
           if icon_src.size != (512,512):
               raise SystemExit(f'Wrong launcher source dimensions: {icon_src.size}')
-          if splash_src.size != (512,512):
-              raise SystemExit(f'Wrong restored 3D splash source dimensions: {splash_src.size}')
+          if splash_src.size != (320,427):
+              raise SystemExit(f'Wrong approved 3D splash source dimensions: {splash_src.size}')
 
           # Keep the entire first image and its square canvas. Remove only the
           # black matte connected to the outer corners so Android can mask the
@@ -239,13 +262,14 @@ jobs:
           Image.new('RGBA',(1024,1024),(255,255,255,255)).save(
               'assets/icon-background.png',format='PNG',optimize=True)
 
-          # Restore the approved sharp 3D rounded-square JOS splash.
-          # Preserve the full 1:1 artwork; only raster resolution changes.
-          splash_2732=splash_src.resize((2732,2732),Image.Resampling.LANCZOS)
+          # Make a square intermediate only for Capacitor resource generation.
+          # The original portrait image is reapplied to each final splash resource.
+          from PIL import ImageOps
+          splash_2732=ImageOps.fit(splash_src,(2732,2732),method=Image.Resampling.LANCZOS,centering=(0.5,0.5))
           splash_2732.save('assets/splash.png',format='PNG',optimize=True)
           splash_2732.save('assets/splash-dark.png',format='PNG',optimize=True)
           print('Approved launcher image:',icon_src.size,'-> Android icon')
-          print('Approved second image:',splash_src.size,'-> uncropped white splash')
+          print('Approved single portrait 3D splash:',splash_src.size)
           PY
           npx capacitor-assets generate --android
 
@@ -259,12 +283,12 @@ jobs:
           import re
           p=Path("android/app/build.gradle")
           s=p.read_text()
-          s,n1=re.subn(r'versionCode\s+\d+', 'versionCode 12', s, count=1)
-          s,n2=re.subn(r'versionName\s+[\'"][^\'"]+[\'"]', "versionName '1.1.1'", s, count=1)
+          s,n1=re.subn(r'versionCode\s+\d+', 'versionCode 13', s, count=1)
+          s,n2=re.subn(r'versionName\s+[\'"][^\'"]+[\'"]', "versionName '1.1.3'", s, count=1)
           if n1 != 1 or n2 != 1:
               raise SystemExit(f"Expected one versionCode and versionName; found {n1}, {n2}")
           p.write_text(s)
-          print("JOS APK version set to 1.1.1 (versionCode 12)")
+          print("JOS APK version set to 1.1.3 (versionCode 13)")
           PY
 
       - name: Remove duplicate small Android launch icon; keep single large web splash
@@ -287,6 +311,8 @@ jobs:
           if not base.exists():
               raise SystemExit('Base Android styles.xml not found')
           base_text=base.read_text()
+          base_text=re.sub(r'(<item\\b[^>]*\\bname=[\"\\\']android:windowBackground[\"\\\'][^>]*>).*?(</item>)',r'\\1#087FE8\\2',base_text,flags=re.S)
+          base.write_text(base_text)
           style_pattern=re.compile(r'<style\b(?=[^>]*\bname=["\']'+re.escape(theme)+r'["\'])[^>]*>.*?</style>',re.S)
           base_style=style_pattern.search(base_text)
           if not base_style:
@@ -307,7 +333,7 @@ jobs:
               return xml.replace('</style>',f'        <item name="{name}">{value}</item>\n    </style>',1)
 
           style=put_item(style,'android:windowSplashScreenAnimatedIcon','@android:color/transparent')
-          style=put_item(style,'android:windowSplashScreenBackground','#FFFFFF')
+          style=put_item(style,'android:windowSplashScreenBackground','#087FE8')
           if existing:
               target_text=target_text[:existing.start()]+style+target_text[existing.end():]
           else:
@@ -323,7 +349,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           from PIL import Image
-          source=Image.open('/tmp/jos-splash.png').convert('RGBA')
+          source=Image.open('/tmp/jos-splash.webp').convert('RGBA')
           source.load()
           root=Path('android/app/src/main/res')
           targets=sorted(root.glob('drawable*/splash.png'))
@@ -332,12 +358,10 @@ jobs:
           for target in targets:
               with Image.open(target) as current:
                   width,height=current.size
-              side=min(width,height)
-              square=source.resize((side,side),Image.Resampling.LANCZOS)
-              canvas=Image.new('RGBA',(width,height),(255,255,255,255))
-              canvas.alpha_composite(square,((width-side)//2,(height-side)//2))
-              canvas.save(target,format='PNG',optimize=True)
-          print(f'Preserved full square second image in {len(targets)} portrait/landscape/night splash resources.')
+              from PIL import ImageOps
+              full=ImageOps.fit(source,(width,height),method=Image.Resampling.LANCZOS,centering=(0.5,0.5))
+              full.save(target,format='PNG',optimize=True)
+          print(f'Applied one full-screen 3D artwork to {len(targets)} Android splash resources.')
           PY
 
       - name: Force approved JOS launcher icons into Android resources
@@ -449,16 +473,14 @@ jobs:
                   raise SystemExit('APK launcher icon does not match the supplied first image')
               actual_splash=Image.open(BytesIO(z.read('res/drawable-port-xxxhdpi-v4/splash.png'))).convert('RGBA')
               source=Image.open('/tmp/jos-splash.png').convert('RGBA')
+              from PIL import ImageOps
               w,h=actual_splash.size
-              side=min(w,h)
-              square=source.resize((side,side),Image.Resampling.LANCZOS)
-              expected=Image.new('RGBA',(w,h),(255,255,255,255))
-              expected.alpha_composite(square,((w-side)//2,(h-side)//2))
+              expected=ImageOps.fit(source,(w,h),method=Image.Resampling.LANCZOS,centering=(0.5,0.5))
               if ImageChops.difference(actual_splash,expected).getbbox():
-                  raise SystemExit('APK splash does not preserve the supplied second square image')
+                  raise SystemExit('APK splash does not match the approved single full-screen 3D artwork')
               print('APK package integrity: OK')
               print('Launcher icon: exact match to supplied first image (Android sizes rasterized only)')
-              print('Splash screen: exact square image centered on white; no crop or fill scaling')
+              print('Splash screen: one full-screen 3D artwork; native duplicate icon transparent')
           PY
 
       - name: Upload APK artifact
