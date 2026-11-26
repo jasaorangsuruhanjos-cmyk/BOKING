@@ -339,9 +339,14 @@ $('locationBtn').addEventListener('click',()=>{
  navigator.geolocation.getCurrentPosition(async pos=>{await sendChatMessage({mediaType:'location',coords:{latitude:pos.coords.latitude,longitude:pos.coords.longitude}});},err=>{$('status').textContent='Izin lokasi gagal atau ditolak: '+err.message;},{enableHighAccuracy:true,timeout:15000});
 });
 function josSessionDiagnostics(){
- let found=[];
- for(const key of JOS_AUTH_KEYS){try{if(localStorage.getItem(key))found.push(key);}catch(_){return 'Penyimpanan lokal APK tidak dapat dibaca';}}
- return found.length?'Sesi tersimpan ('+found.join(', ')+')':'Tidak ditemukan sesi pelanggan pada penyimpanan halaman chat';
+ let found=[],allKeys=[],storageLength='?';
+ try{
+  storageLength=String(localStorage.length);
+  for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key)allKeys.push(key);}
+  for(const key of JOS_AUTH_KEYS){if(localStorage.getItem(key))found.push(key);}
+ }catch(_){return 'Penyimpanan lokal tidak dapat dibaca. Origin: '+location.origin;}
+ const origin='Origin chat: '+location.origin+'. Jumlah item penyimpanan: '+storageLength+'.';
+ return found.length?origin+' Sesi ditemukan ('+found.join(', ')+').':origin+' Sesi pelanggan tidak ditemukan. Kunci yang ada: '+(allKeys.join(', ')||'(kosong)')+'.';
 }
 async function josWaitForCustomerSession(){
  let lastError=null;
