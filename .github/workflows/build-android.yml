@@ -263,12 +263,15 @@ jobs:
           Image.new('RGBA',(1024,1024),(255,255,255,255)).save(
               'assets/icon-background.png',format='PNG',optimize=True)
 
-          # Preserve the approved square 3D logo without cropping or stretching.
-          splash_2732=splash_src.resize((2732,2732),Image.Resampling.LANCZOS)
+          # Preserve the complete 3:2 logo artwork; contain it on white, never stretch or crop.
+          from PIL import ImageOps
+          splash_2732=Image.new('RGBA',(2732,2732),(255,255,255,255))
+          splash_fit=ImageOps.contain(splash_src,(2732,2732),method=Image.Resampling.LANCZOS)
+          splash_2732.alpha_composite(splash_fit,((2732-splash_fit.width)//2,(2732-splash_fit.height)//2))
           splash_2732.save('assets/splash.png',format='PNG',optimize=True)
           splash_2732.save('assets/splash-dark.png',format='PNG',optimize=True)
           print('Approved launcher image:',icon_src.size,'-> Android icon')
-          print('Approved square 3D JOS logo for native splash:',splash_src.size)
+          print('Approved JOS splash, original aspect ratio preserved:',splash_src.size)
           PY
           npx capacitor-assets generate --android
 
