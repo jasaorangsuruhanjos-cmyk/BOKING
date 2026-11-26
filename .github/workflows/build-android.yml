@@ -233,8 +233,8 @@ jobs:
           icon_src.load(); splash_src.load()
           if icon_src.size != (512,512):
               raise SystemExit(f'Wrong launcher source dimensions: {icon_src.size}')
-          if splash_src.size != (1536,1024):
-              raise SystemExit(f'Wrong approved JOS splash dimensions: {splash_src.size}')
+          if splash_src.width < 500 or splash_src.height < 500:
+              raise SystemExit(f'Approved JOS splash image is unexpectedly small: {splash_src.size}')
 
           # Keep the entire first image and its square canvas. Remove only the
           # black matte connected to the outer corners so Android can mask the
@@ -302,11 +302,11 @@ jobs:
           root=Path('android/app/src/main/res')
           source=Image.open('/tmp/jos-splash.png').convert('RGBA')
           source.load()
-          if source.size != (1536,1024):
-              raise SystemExit(f'Unexpected approved splash size: {source.size}')
+          if source.width < 500 or source.height < 500:
+              raise SystemExit(f'Unexpectedly small approved splash image: {source.size}')
           d=root/'drawable-nodpi'; d.mkdir(parents=True,exist_ok=True)
-          # Android 12 masks the animated splash icon. Keep the complete blue
-          # 3D frame inside a generous safe area instead of letting the mask crop it.
+          # Android 12 masks the animated splash icon. Keep the complete uploaded
+          # JOS artwork inside a generous safe area on white.
           icon=Image.new('RGBA',(1024,1024),(255,255,255,255))
           from PIL import ImageOps
           safe=ImageOps.contain(source,(960,960),method=Image.Resampling.LANCZOS)
@@ -314,7 +314,7 @@ jobs:
           icon.save(d/'jos_splash_icon.png',optimize=True)
           bg=root/'drawable'; bg.mkdir(parents=True,exist_ok=True)
           (bg/'jos_splash_background.xml').write_text('''<layer-list xmlns:android="http://schemas.android.com/apk/res/android"><item><shape android:shape="rectangle"><solid android:color="#FFFFFF"/></shape></item><item><bitmap android:gravity="center" android:src="@drawable/jos_splash_icon" android:filter="true"/></item></layer-list>''')
-          print('Installed the exact new square 3D logo as native launch artwork, with no crop.')
+          print('Installed the uploaded JOS artwork as native launch splash, contained on white.')
           PY
 
       - name: Configure the single native 3D splash and remove the web duplicate
@@ -385,13 +385,13 @@ jobs:
               with Image.open(target) as current:
                   width,height=current.size
               from PIL import ImageOps
-              # Never crop the square 3D artwork to fill a portrait canvas.
-              # Contain it at full aspect ratio and extend only the blue background.
+              # Never crop or stretch the uploaded artwork to fill a portrait canvas.
+              # Contain it at full aspect ratio and extend only the white background.
               contained=ImageOps.contain(source,(width,height),method=Image.Resampling.LANCZOS)
               full=Image.new('RGBA',(width,height),(255,255,255,255))
               full.alpha_composite(contained,((width-contained.width)//2,(height-contained.height)//2))
               full.save(target,format='PNG',optimize=True)
-          print(f'Applied one full-screen 3D artwork to {len(targets)} Android splash resources.')
+          print(f'Applied one full-screen white JOS splash to {len(targets)} Android resources.')
           PY
 
       - name: Force approved JOS launcher icons into Android resources
