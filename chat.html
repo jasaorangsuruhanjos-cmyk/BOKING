@@ -61,10 +61,33 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <script>
+// APK dan website harus membaca sesi pelanggan yang sama.
+const JOS_AUTH_KEYS=['jos-customer-auth','sb-aqhfkcdglfijdtsgyzmq-auth-token'];
+const josAuthStorage={
+ async getItem(key){
+  let value=null;
+  try{value=localStorage.getItem(key);}catch(_){}
+  if(value)return value;
+  for(const candidate of JOS_AUTH_KEYS){
+   if(candidate===key)continue;
+   try{
+    value=localStorage.getItem(candidate);
+    if(value){
+     // Migrasikan sesi lama ke key utama agar refresh token tetap berjalan.
+     try{localStorage.setItem(key,value);}catch(_){}
+     return value;
+    }
+   }catch(_){}
+  }
+  return null;
+ },
+ async setItem(key,value){localStorage.setItem(key,value);},
+ async removeItem(key){localStorage.removeItem(key);}
+};
 const db=window.supabase.createClient(
  'https://aqhfkcdglfijdtsgyzmq.supabase.co',
  'sb_publishable_Ymh1RsVe9Ba9No27l58jGA_hpD04lSw',
- {auth:{persistSession:true,autoRefreshToken:true,flowType:'pkce',detectSessionInUrl:true,storageKey:'jos-customer-auth'}}
+ {auth:{persistSession:true,autoRefreshToken:true,flowType:'pkce',detectSessionInUrl:true,storageKey:'jos-customer-auth',storage:josAuthStorage}}
 );
 const $=id=>document.getElementById(id);
 let conversationId=null,pollTimer=null,busy=false;
@@ -186,6 +209,8 @@ async function load(){
    return;
   }
   guestSession=null;sessionStorage.removeItem(GUEST_SESSION_KEY);$('guestInfo').hidden=true;$('tools').style.display='flex';
+  // Hapus tampilan awal mode tamu jika sesi pelanggan baru selesai dipulihkan.
+  $('messages').querySelector('.login-note')?.remove();
   conversationId=conversationId||await ensureConversation(user);
   const {data,error}=await db.from('jos_chat_messages').select('id,sender_role,message,created_at,media_url,media_type,latitude,longitude,location_label,delivery_status,read_at,preview_url').eq('environment','production').eq('conversation_id',conversationId).order('created_at',{ascending:true}).limit(300);
   if(error)throw error;render(data||[]);$('form').style.display='flex';$('status').textContent='Percakapan Anda tersimpan dengan aman.';
