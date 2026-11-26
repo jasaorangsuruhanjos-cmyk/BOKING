@@ -309,7 +309,8 @@ jobs:
           # JOS artwork inside a generous safe area on white.
           icon=Image.new('RGBA',(1024,1024),(255,255,255,255))
           from PIL import ImageOps
-          safe=ImageOps.contain(source,(960,960),method=Image.Resampling.LANCZOS)
+          # Keep all four logo edges well inside Android 12's circular icon mask.
+          safe=ImageOps.contain(source,(560,560),method=Image.Resampling.LANCZOS)
           icon.alpha_composite(safe,((1024-safe.width)//2,(1024-safe.height)//2))
           icon.save(d/'jos_splash_icon.png',optimize=True)
           bg=root/'drawable'; bg.mkdir(parents=True,exist_ok=True)
