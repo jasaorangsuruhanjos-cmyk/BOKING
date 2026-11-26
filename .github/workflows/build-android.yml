@@ -145,7 +145,7 @@ jobs:
                   public void openChat() {
                       runOnUiThread(() -> {
                           if (getBridge() != null && getBridge().getWebView() != null) {
-                              getBridge().getWebView().loadUrl("https://jasaorangsuruhan.my.id/chat.html");
+                              getBridge().getWebView().getSettings().setCacheMode(android.webkit.WebSettings.LOAD_NO_CACHE);\n                              getBridge().getWebView().loadUrl("https://jasaorangsuruhan.my.id/chat.html?app=1.1.0");
                           }
                       });
                   }
@@ -250,12 +250,12 @@ jobs:
           import re
           p=Path("android/app/build.gradle")
           s=p.read_text()
-          s,n1=re.subn(r'versionCode\s+\d+', 'versionCode 10', s, count=1)
-          s,n2=re.subn(r'versionName\s+[\'"][^\'"]+[\'"]', "versionName '1.0.9'", s, count=1)
+          s,n1=re.subn(r'versionCode\s+\d+', 'versionCode 11', s, count=1)
+          s,n2=re.subn(r'versionName\s+[\'"][^\'"]+[\'"]', "versionName '1.1.0'", s, count=1)
           if n1 != 1 or n2 != 1:
               raise SystemExit(f"Expected one versionCode and versionName; found {n1}, {n2}")
           p.write_text(s)
-          print("JOS APK version set to 1.0.9 (versionCode 10)")
+          print("JOS APK version set to 1.1.0 (versionCode 11)")
           PY
 
       - name: Remove duplicate small Android launch icon; keep single large web splash
