@@ -147,7 +147,7 @@ async function load(){
  try{
   const user=await userNow();
   if(!user){
-   if(!guestSession){showGuestStart();return;}
+   if(!guestSession){if(!$('guestName'))showGuestStart();return;}
    $('tools').style.display='none';
    const result=await db.functions.invoke('jos-staging-chat',{body:{action:'guest_poll',conversation_id:guestSession.conversation_id,guest_token:guestSession.guest_token}});
    if(result.error||result.data?.closed){showGuestClosed(result.data?.error||result.error?.message||undefined);return;}
