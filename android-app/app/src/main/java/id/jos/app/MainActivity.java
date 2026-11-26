@@ -57,7 +57,7 @@ public class MainActivity extends Activity {
                 // Keep the official logo image unchanged; style only its background and depth.
                 view.evaluateJavascript("(function(){"
                     + "var s=document.getElementById('josLaunchSplash');if(!s)return;"
-                    + "s.style.setProperty('background','radial-gradient(ellipse at 50% 42%,#ffffff 0%,#eaf6ff 48%,#c9e5ff 100%)','important');"
+                    + "s.style.setProperty('background','#ffffff','important');"
                     + "s.style.setProperty('perspective','1100px','important');"
                     + "var img=s.querySelector('img');if(img){"
                     + "img.style.setProperty('border-radius','34px','important');"
