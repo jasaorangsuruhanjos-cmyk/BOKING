@@ -441,9 +441,35 @@ jobs:
           grep -q "Jasa Orang Suruhan" www/index.html
           test "$(wc -c < www/index.html)" -gt 500000
 
+      - name: Configure resilient Maven Central mirror
+        run: |
+          cat > jos-maven-mirror.init.gradle <<'GRADLE'
+          def josMavenMirror = 'https://maven-central.storage-download.googleapis.com/maven2/'
+          settingsEvaluated { settings ->
+              settings.pluginManagement.repositories.maven {
+                  name = 'josGoogleMavenCentralMirror'
+                  url = josMavenMirror
+              }
+              settings.dependencyResolutionManagement.repositories.maven {
+                  name = 'josGoogleMavenCentralMirror'
+                  url = josMavenMirror
+              }
+          }
+          gradle.beforeProject { project ->
+              project.buildscript.repositories.maven {
+                  name = 'josGoogleMavenCentralMirror'
+                  url = josMavenMirror
+              }
+              project.repositories.maven {
+                  name = 'josGoogleMavenCentralMirror'
+                  url = josMavenMirror
+              }
+          }
+          GRADLE
+
       - name: Build debug APK
         working-directory: android
-        run: ./gradlew assembleDebug
+        run: ./gradlew --init-script ../jos-maven-mirror.init.gradle assembleDebug
 
       - name: Inspect and verify the APK package, signature, icon, and splash
         run: |
