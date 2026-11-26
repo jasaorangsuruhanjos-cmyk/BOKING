@@ -49,7 +49,7 @@
 <div class="info">Sampaikan pertanyaan atau kebutuhan Anda. Balasan Admin JOS akan muncul di halaman chat ini.</div>
 <div id="messages"><div class="welcome"><b>Halo! 👋</b>Silakan mulai percakapan dengan Admin JOS.</div></div>
 <div class="status" id="status">Memeriksa akun pelanggan...</div>
-<div class="tools">
+<div class="tools" id="tools">
 <button class="toolbtn" type="button" id="photoBtn">📷 Foto</button>
 <button class="toolbtn" type="button" id="videoBtn">🎥 Video</button>
 <button class="toolbtn" type="button" id="locationBtn">📍 Share lokasi</button>
@@ -67,9 +67,24 @@ const db=window.supabase.createClient(
  {auth:{persistSession:true,autoRefreshToken:true,flowType:'pkce',detectSessionInUrl:true,storageKey:'jos-customer-auth'}}
 );
 const $=id=>document.getElementById(id);
-let conversationId=null,pollTimer=null,busy=false;
+let conversationId=null,pollTimer=null,busy=false;\nconst GUEST_SESSION_KEY='jos-chat-guest-session-v1';\nlet guestSession=null;\ntry{guestSession=JSON.parse(sessionStorage.getItem(GUEST_SESSION_KEY)||'null');}catch(_){guestSession=null;}
 $('back').addEventListener('click',()=>{location.href='./index.html';});
-function showLogin(){ const note=document.createElement('div');note.className='login-note';note.append(document.createTextNode('Anda perlu login ke akun pelanggan JOS untuk menggunakan chat.'));note.append(document.createElement('br'));const back=document.createElement('button');back.type='button';back.textContent='Kembali dan Login';back.addEventListener('click',()=>{location.href='./index.html';});note.append(back);$('messages').replaceChildren(note);$('form').style.display='none';$('status').textContent='Login diperlukan';}
+function showGuestStart(message='Chat sebagai tamu tanpa login. Isi nama panggilan untuk mulai.') {
+ const note=document.createElement('div');note.className='login-note';
+ const title=document.createElement('b');title.textContent='Mulai Chat Admin JOS';
+ const desc=document.createElement('div');desc.textContent=message;
+ const name=document.createElement('input');name.id='guestName';name.maxLength=40;name.autocomplete='nickname';name.placeholder='Nama panggilan Anda';name.setAttribute('aria-label','Nama panggilan');
+ name.style.cssText='display:block;width:100%;max-width:300px;margin:14px auto 8px;padding:12px;border:1px solid #d7e3ed;border-radius:11px;font:inherit';
+ const start=document.createElement('button');start.type='button';start.textContent='Mulai Chat';
+ start.addEventListener('click',startGuestChat);
+ note.append(title,document.createElement('br'),desc,name,start);
+ $('messages').replaceChildren(note);$('form').style.display='none';$('tools').style.display='none';
+ $('status').textContent='Mode tamu • tanpa akun';
+}
+function showGuestClosed(message='Chat ditutup otomatis karena tidak aktif selama 30 menit. Riwayat percakapan telah dihapus.') {
+ guestSession=null;sessionStorage.removeItem(GUEST_SESSION_KEY);conversationId=null;
+ showGuestStart(message+' Mulai chat baru jika masih membutuhkan bantuan.');
+}
 async function userNow(){const {data,error}=await db.auth.getUser();if(error)throw error;return data.user;}
 async function ensureConversation(user){
  const {data,error}=await db.from('jos_chat_conversations').select('id').eq('environment','production').eq('customer_id',user.id).order('created_at',{ascending:false}).limit(1).maybeSingle();
@@ -130,10 +145,22 @@ function render(rows){
 async function load(){
  if(busy)return;busy=true;
  try{
-  const user=await userNow();if(!user){showLogin();return;}
+  const user=await userNow();
+  if(!user){
+   if(!guestSession){showGuestStart();return;}
+   $('tools').style.display='none';
+   const result=await db.functions.invoke('jos-staging-chat',{body:{action:'guest_poll',conversation_id:guestSession.conversation_id,guest_token:guestSession.guest_token}});
+   if(result.error||result.data?.closed){showGuestClosed(result.data?.error||result.error?.message||undefined);return;}
+   render(result.data?.messages||[]);
+   conversationId=guestSession.conversation_id;
+   $('form').style.display='flex';
+   $('status').textContent='Chat tamu • '+guestSession.name+' • akan dihapus setelah 30 menit tanpa aktivitas.';
+   return;
+  }
+  guestSession=null;sessionStorage.removeItem(GUEST_SESSION_KEY);$('tools').style.display='flex';
   conversationId=conversationId||await ensureConversation(user);
   const {data,error}=await db.from('jos_chat_messages').select('id,sender_role,message,created_at,media_url,media_type,latitude,longitude,location_label,delivery_status,read_at,preview_url').eq('environment','production').eq('conversation_id',conversationId).order('created_at',{ascending:true}).limit(300);
-  if(error)throw error;render(data||[]);$('status').textContent='Percakapan Anda tersimpan dengan aman.';
+  if(error)throw error;render(data||[]);$('form').style.display='flex';$('status').textContent='Percakapan Anda tersimpan dengan aman.';
  }catch(e){$('status').textContent='Chat belum dapat dimuat: '+(e.message||'Periksa koneksi.');}
  finally{busy=false;}
 }
@@ -180,10 +207,38 @@ async function uploadChatFile(file,path,onProgress){
  }else{const {error}=await db.storage.from('jos-chat-production').upload(path,file,{contentType:file.type,upsert:false});if(error)throw error;}
  return db.storage.from('jos-chat-production').getPublicUrl(path).data.publicUrl;
 }
+async function startGuestChat(){
+ const name=$('guestName')?.value.trim()||'';
+ if(name.length<2){$('status').textContent='Masukkan nama panggilan minimal 2 karakter.';return;}
+ const bytes=new Uint8Array(32);crypto.getRandomValues(bytes);
+ const token=Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('');
+ $('status').textContent='Membuka chat tamu...';
+ try{
+  const result=await db.functions.invoke('jos-staging-chat',{body:{action:'guest_start',name,guest_token:token}});
+  if(result.error||!result.data?.success)throw new Error(result.data?.error||result.error?.message||'Chat tamu gagal dibuat.');
+  guestSession={conversation_id:result.data.conversation_id,guest_token:token,name:result.data.guest_name||name};
+  sessionStorage.setItem(GUEST_SESSION_KEY,JSON.stringify(guestSession));
+  conversationId=guestSession.conversation_id;$('tools').style.display='none';$('form').style.display='flex';
+  render([]);$('status').textContent='Chat tamu aktif. Kirim pesan pertama Anda.';
+  $('message').focus();
+ }catch(e){$('status').textContent='Gagal membuka chat: '+(e.message||e);}
+}
 async function sendChatMessage({message='',file=null,mediaType=null,coords=null}){
  $('send').disabled=true;$('status').textContent=file?'Menyiapkan unggahan…':'Mengirim...';
  try{
-  const user=await userNow();if(!user)throw new Error('Silakan login kembali.');
+  const user=await userNow();
+  if(!user){
+   if(!guestSession)throw new Error('Mulai chat tamu terlebih dahulu.');
+   if(file||coords||mediaType)throw new Error('Mode tamu saat ini mendukung pesan teks.');
+   const result=await db.functions.invoke('jos-staging-chat',{body:{action:'guest_send',conversation_id:guestSession.conversation_id,guest_token:guestSession.guest_token,message}});
+   if(result.error||!result.data?.success){
+    if(result.data?.closed){showGuestClosed(result.data?.error);return;}
+    throw new Error(result.data?.error||result.error?.message||'Pesan gagal dikirim.');
+   }
+   await load();
+   $('status').textContent=result.data.telegram_notified?'Pesan terkirim ke Admin JOS.':'Pesan tersimpan, tetapi notifikasi admin belum terkirim.';
+   return;
+  }
   conversationId=conversationId||await ensureConversation(user);
   let mediaUrl=null,previewUrl=null,originalMediaUrl=null;
   if(file){
@@ -230,7 +285,7 @@ $('locationBtn').addEventListener('click',()=>{
  $('status').textContent='Mengambil lokasi...';
  navigator.geolocation.getCurrentPosition(async pos=>{await sendChatMessage({mediaType:'location',coords:{latitude:pos.coords.latitude,longitude:pos.coords.longitude}});},err=>{$('status').textContent='Izin lokasi gagal atau ditolak: '+err.message;},{enableHighAccuracy:true,timeout:15000});
 });
-(async()=>{try{const user=await userNow();if(!user){showLogin();return;}await load();pollTimer=setInterval(load,5000);}catch(e){$('status').textContent='Gagal memeriksa sesi: '+e.message;}})();
+(async()=>{try{const user=await userNow();if(!user&&!guestSession){showGuestStart();}else{await load();}pollTimer=setInterval(load,5000);}catch(e){showGuestStart('Tidak dapat memeriksa akun. Anda tetap dapat memulai chat sebagai tamu.');pollTimer=setInterval(load,5000);}})();
 </script>
 </body>
 </html>
