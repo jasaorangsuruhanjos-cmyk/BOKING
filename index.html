@@ -1446,7 +1446,7 @@ function closeMainMenu(){mainDrawer.classList.remove('open');menuBackdrop.classL
 document.getElementById('openMainMenu').addEventListener('click',openMainMenu);
 document.getElementById('closeMainMenu').addEventListener('click',closeMainMenu);
 menuBackdrop.addEventListener('click',closeMainMenu);
-document.querySelectorAll('[data-drawer]').forEach(btn=>btn.addEventListener('click',()=>{const dest=btn.dataset.drawer;closeMainMenu();if(dest==='home'){showHome();}else if(dest==='services'){document.getElementById('categories').scrollIntoView({behavior:'smooth',block:'start'});}else if(dest==='orders'){openJosPortal('orders');}else if(dest==='account'){openJosPortal('customer');}else if(dest==='chat'){josOpenChatWithSession();}}));
+document.querySelectorAll('[data-drawer]').forEach(btn=>btn.addEventListener('click',()=>{const dest=btn.dataset.drawer;closeMainMenu();if(dest==='home'){showHome();}else if(dest==='services'){document.getElementById('categories').scrollIntoView({behavior:'smooth',block:'start'});}else if(dest==='orders'){openJosPortal('orders');}else if(dest==='account'){openJosPortal('customer');}else if(dest==='chat'){if(window.JosAndroid&&typeof window.JosAndroid.openChat==='function'){window.JosAndroid.openChat();}else{window.location.href=new URL('chat.html',document.baseURI).href;}}}));
 const searchInput=document.getElementById('search');
 document.getElementById('searchBox').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')searchInput.focus()});
 document.getElementById('searchFocus').addEventListener('click',()=>{const term=searchInput.value.trim();if(term){filterServices(term);const found=cards.some(card=>card.style.display!=='none');if(!found){openCustomService(term);return;}document.getElementById('cards').scrollIntoView({behavior:'smooth',block:'start'});}else{searchInput.focus();}});
@@ -1561,25 +1561,6 @@ const josAdminDb=window.supabase.createClient(
   {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'jos-admin-auth'}}
 );
 
-async function josOpenChatWithSession(){
- try{
-  const {data,error}=await josDb.auth.getSession();
-  if(error)throw error;
-  const session=data?.session;
-  if(session?.access_token&&session?.refresh_token){
-   sessionStorage.setItem('jos-chat-session-transfer',JSON.stringify({
-    access_token:session.access_token,refresh_token:session.refresh_token
-   }));
-  }else{
-   sessionStorage.removeItem('jos-chat-session-transfer');
-  }
- }catch(error){
-  console.warn('Sesi pelanggan tidak dapat disiapkan untuk Chat Admin:',error?.message||error);
- }
- // Gunakan navigasi halaman dalam WebView yang sama seperti website.
- // Jangan memanggil native loadUrl(), karena itu dapat memutus sessionStorage transfer.
- window.location.href=new URL('chat.html',document.baseURI).href;
-}
 const JOS_AFFILIATE_REF_KEY='jos_affiliate_referral_code';
 try{
  const referralFromUrl=new URLSearchParams(location.search).get('ref');
@@ -3128,7 +3109,7 @@ body.jos-order-open #josChatLauncher{display:none!important}
   if(!document.body||document.getElementById('josChatLauncher'))return;
   var b=document.createElement('button');b.id='josChatLauncher';b.type='button';b.textContent='💬 Chat Admin';
   b.addEventListener('click',function(){
-   josOpenChatWithSession();
+   if(window.JosAndroid&&typeof window.JosAndroid.openChat==='function'){window.JosAndroid.openChat();}else{window.location.href=new URL('chat.html',document.baseURI).href;}
   });
   document.body.appendChild(b);
  }
