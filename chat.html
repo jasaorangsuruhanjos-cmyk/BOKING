@@ -72,6 +72,12 @@ const GUEST_SESSION_KEY='jos-chat-guest-session-v1';
 let guestSession=null;
 try{guestSession=JSON.parse(sessionStorage.getItem(GUEST_SESSION_KEY)||'null');}catch(_){guestSession=null;}
 $('back').addEventListener('click',()=>{
+ try{
+  if(window.JosAndroid&&typeof window.JosAndroid.goHome==='function'){
+   window.JosAndroid.goHome();
+   return;
+  }
+ }catch(_){}
  const ref=document.referrer;
  let sameOriginReferrer=false;
  try{sameOriginReferrer=!!ref&&new URL(ref).origin===location.origin;}catch(_){}
