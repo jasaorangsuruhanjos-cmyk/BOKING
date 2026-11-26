@@ -10,9 +10,9 @@
       "launchAutoHide": true,
       "launchShowDuration": 0,
       "launchFadeOutDuration": 150,
-      "backgroundColor": "#FFFFFF",
+      "backgroundColor": "#087FE8",
       "showSpinner": false,
-      "androidScaleType": "CENTER_INSIDE",
+      "androidScaleType": "CENTER_CROP",
       "splashFullScreen": true,
       "splashImmersive": true
     }
