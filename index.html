@@ -3093,10 +3093,21 @@ document.addEventListener('click',event=>{
 </script>
 
 <style id="jos-chat-launcher-style">
-#josChatLauncher{position:fixed;right:18px;bottom:98px;z-index:100700;border:0;border-radius:999px;background:#0878d1;color:#fff;padding:13px 17px;font-weight:900;font-size:13px;box-shadow:0 8px 25px #073c6a55}
-@media(max-width:520px){#josChatLauncher{right:12px;bottom:94px}}
+#josChatLauncher{position:fixed!important;right:16px!important;bottom:112px!important;z-index:2147483000!important;border:0!important;border-radius:999px!important;background:#0878d1!important;color:#fff!important;padding:14px 17px!important;font-weight:900!important;font-size:14px!important;box-shadow:0 8px 25px #073c6a66!important;display:flex!important;align-items:center!important;gap:7px!important;visibility:visible!important;opacity:1!important}
+@media(max-width:520px){#josChatLauncher{right:14px!important;bottom:108px!important}}
 </style>
-<button id="josChatLauncher" type="button" onclick="window.location.href='chat.html'">💬 Chat Admin</button>
+<script id="jos-chat-launcher-script">
+(function(){
+ function mountJOSChat(){
+  if(!document.body||document.getElementById('josChatLauncher'))return;
+  var b=document.createElement('button');b.id='josChatLauncher';b.type='button';b.textContent='💬 Chat Admin';
+  b.addEventListener('click',function(){window.location.href=new URL('chat.html',document.baseURI).href;});
+  document.body.appendChild(b);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mountJOSChat,{once:true});else mountJOSChat();
+ window.addEventListener('load',mountJOSChat,{once:true});
+})();
+</script>
 
 </body>
 
