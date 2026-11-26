@@ -61,33 +61,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <script>
-// APK dan website harus membaca sesi pelanggan yang sama.
-const JOS_AUTH_KEYS=['jos-customer-auth','sb-aqhfkcdglfijdtsgyzmq-auth-token'];
-const josAuthStorage={
- async getItem(key){
-  let value=null;
-  try{value=localStorage.getItem(key);}catch(_){}
-  if(value)return value;
-  for(const candidate of JOS_AUTH_KEYS){
-   if(candidate===key)continue;
-   try{
-    value=localStorage.getItem(candidate);
-    if(value){
-     // Migrasikan sesi lama ke key utama agar refresh token tetap berjalan.
-     try{localStorage.setItem(key,value);}catch(_){}
-     return value;
-    }
-   }catch(_){}
-  }
-  return null;
- },
- async setItem(key,value){localStorage.setItem(key,value);},
- async removeItem(key){localStorage.removeItem(key);}
-};
 const db=window.supabase.createClient(
  'https://aqhfkcdglfijdtsgyzmq.supabase.co',
  'sb_publishable_Ymh1RsVe9Ba9No27l58jGA_hpD04lSw',
- {auth:{persistSession:true,autoRefreshToken:true,flowType:'pkce',detectSessionInUrl:true,storageKey:'jos-customer-auth',storage:josAuthStorage}}
+ {auth:{persistSession:true,autoRefreshToken:true,flowType:'pkce',detectSessionInUrl:true,storageKey:'jos-customer-auth'}}
 );
 const $=id=>document.getElementById(id);
 let conversationId=null,pollTimer=null,busy=false;
@@ -209,8 +186,6 @@ async function load(){
    return;
   }
   guestSession=null;sessionStorage.removeItem(GUEST_SESSION_KEY);$('guestInfo').hidden=true;$('tools').style.display='flex';
-  // Hapus tampilan awal mode tamu jika sesi pelanggan baru selesai dipulihkan.
-  $('messages').querySelector('.login-note')?.remove();
   conversationId=conversationId||await ensureConversation(user);
   const {data,error}=await db.from('jos_chat_messages').select('id,sender_role,message,created_at,media_url,media_type,latitude,longitude,location_label,delivery_status,read_at,preview_url').eq('environment','production').eq('conversation_id',conversationId).order('created_at',{ascending:true}).limit(300);
   if(error)throw error;render(data||[]);$('form').style.display='flex';$('status').textContent='Percakapan Anda tersimpan dengan aman.';
@@ -338,60 +313,7 @@ $('locationBtn').addEventListener('click',()=>{
  $('status').textContent='Mengambil lokasi...';
  navigator.geolocation.getCurrentPosition(async pos=>{await sendChatMessage({mediaType:'location',coords:{latitude:pos.coords.latitude,longitude:pos.coords.longitude}});},err=>{$('status').textContent='Izin lokasi gagal atau ditolak: '+err.message;},{enableHighAccuracy:true,timeout:15000});
 });
-function josSessionDiagnostics(){
- let found=[],allKeys=[],storageLength='?';
- try{
-  storageLength=String(localStorage.length);
-  for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key)allKeys.push(key);}
-  for(const key of JOS_AUTH_KEYS){if(localStorage.getItem(key))found.push(key);}
- }catch(_){return 'Penyimpanan lokal tidak dapat dibaca. Origin: '+location.origin;}
- const origin='Origin chat: '+location.origin+'. Jumlah item penyimpanan: '+storageLength+'.';
- return found.length?origin+' Sesi ditemukan ('+found.join(', ')+').':origin+' Sesi pelanggan tidak ditemukan. Kunci yang ada: '+(allKeys.join(', ')||'(kosong)')+'.';
-}
-async function josRestoreTransferredCustomerSession(){
- let raw=null;
- try{raw=sessionStorage.getItem('jos-chat-session-transfer');sessionStorage.removeItem('jos-chat-session-transfer');}catch(_){}
- if(!raw)return false;
- let transferred;
- try{transferred=JSON.parse(raw);}catch(_){return false;}
- if(!transferred?.access_token||!transferred?.refresh_token)return false;
- const {data,error}=await db.auth.setSession({
-  access_token:transferred.access_token,
-  refresh_token:transferred.refresh_token
- });
- if(error)throw error;
- return !!data?.session?.user;
-}
-async function josWaitForCustomerSession(){
- let lastError=null;
- try{if(await josRestoreTransferredCustomerSession())return await userNow();}catch(e){lastError=e;}
- for(let attempt=0;attempt<3;attempt++){
-  try{
-   const user=await userNow();
-   if(user)return user;
-  }catch(e){lastError=e;}
-  if(attempt<2)await new Promise(resolve=>setTimeout(resolve,700*(attempt+1)));
- }
- if(lastError)throw lastError;
- return null;
-}
-(async()=>{
- try{
-  const user=await josWaitForCustomerSession();
-  if(user){await load();}
-  else{
-   const diag=josSessionDiagnostics();
-   showGuestStart(diag+'. Jika akun sudah login di beranda APK, kirim tangkapan layar pesan ini kepada Admin JOS.');
-   $('status').textContent='Sesi pelanggan belum terbaca di Chat Admin.';
-  }
-  pollTimer=setInterval(load,5000);
- }catch(e){
-  const diag=josSessionDiagnostics();
-  showGuestStart('Pemeriksaan sesi gagal: '+(e?.message||'kesalahan tidak diketahui')+'. '+diag+'. Anda dapat mencoba chat tamu sementara.');
-  $('status').textContent='Gagal memulihkan sesi pelanggan.';
-  pollTimer=setInterval(load,5000);
- }
-})();
+(async()=>{try{const user=await userNow();if(!user&&!guestSession){showGuestStart();}else{await load();}pollTimer=setInterval(load,5000);}catch(e){showGuestStart('Tidak dapat memeriksa akun. Anda tetap dapat memulai chat sebagai tamu.');pollTimer=setInterval(load,5000);}})();
 </script>
 </body>
 </html>
