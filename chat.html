@@ -309,9 +309,17 @@ async function sendChatMessage({message='',file=null,mediaType=null,coords=null}
   if(coords){row.latitude=coords.latitude;row.longitude=coords.longitude;row.location_label='Lokasi pelanggan';}
   const {data:inserted,error}=await db.from('jos_chat_messages').insert(row).select('id').single();if(error)throw error;
   await db.from('jos_chat_conversations').update({updated_at:new Date().toISOString()}).eq('id',conversationId);
+  let aiResult=null;
+  if(!file && message){
+   aiResult=await db.functions.invoke('jos-production-ai',{body:{environment:'production',conversation_id:conversationId,message_id:inserted.id}});
+  }
   await load();
   const notify=await db.functions.invoke('jos-staging-chat',{body:{action:'notify_customer_message',environment:'production',conversation_id:conversationId,message_id:inserted.id}});
-  $('status').textContent=notify.error||notify.data?.success!==true?'Pesan tersimpan. Notifikasi Telegram belum aktif.':'Pesan terkirim ke Admin JOS.';
+  if(aiResult?.error||aiResult?.data?.error){
+   $('status').textContent='Pesan tersimpan. Admin JOS sudah diberi notifikasi; AI belum dapat membalas.';
+  }else{
+   $('status').textContent=notify.error||notify.data?.success!==true?'Pesan tersimpan. Notifikasi Telegram belum aktif.':'Pesan terkirim ke Admin JOS.';
+  }
  }catch(err){$('status').textContent='Gagal mengirim: '+(err.message||'Coba lagi.');}
  finally{$('send').disabled=false;}
 }
