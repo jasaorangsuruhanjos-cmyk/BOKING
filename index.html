@@ -270,6 +270,11 @@ body.all-services-mode .section-head a{display:none!important}
 @media(min-width:520px){.jos-social-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
 /* Label kategori Request di Beranda mengikuti nama layanan lengkap. */
 #categories button[data-filter="Request Jasa"] span:last-child{font-size:9px;line-height:1.15;max-width:92px;margin-left:auto;margin-right:auto;overflow-wrap:anywhere}
+/* Tombol akses cepat Chat Admin di Beranda */
+#josHomeChatAdmin{position:fixed;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:90;display:flex;align-items:center;gap:8px;padding:11px 15px;border-radius:999px;background:linear-gradient(145deg,#1596ed,#0756a4);color:#fff;text-decoration:none;font-size:12px;font-weight:850;box-shadow:0 5px 16px #063b7060,0 3px 0 #034477;border:1px solid #ffffff80}
+#josHomeChatAdmin span{font-size:18px;line-height:1}
+#josHomeChatAdmin:active{transform:translateY(2px)}
+@media(min-width:700px){#josHomeChatAdmin{right:max(20px,calc((100vw - 600px)/2 + 16px))}}
 </style>
 <style id="jos-db-portals">
 .portal-layer{display:none;position:fixed;inset:0;z-index:10050;background:#f4f8fb;overflow:auto;padding:18px 12px 100px}.portal-layer.open{display:block}.portal-wrap{max-width:760px;margin:0 auto}.portal-top{display:flex;align-items:center;gap:12px;margin:4px 0 18px}.portal-back{border:0;border-radius:12px;padding:10px 14px;background:#e7f2fa;color:#07569a;font-weight:800}.portal-card{background:#fff;border:1px solid #d7e6f1;border-radius:18px;padding:17px;margin:12px 0;box-shadow:0 5px 18px #123b7610}.portal-card h2,.portal-card h3{margin:0 0 8px;color:#07569a}.portal-card p{color:#617789;font-size:13px;line-height:1.5}.portal-card label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}.portal-card input,.portal-card textarea,.portal-card select{width:100%;padding:12px;border:1px solid #cbdce9;border-radius:11px;font:inherit;background:#fff}.portal-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0}.portal-actions button,.portal-submit{border:0;border-radius:12px;padding:12px;background:#087bd5;color:#fff;font-weight:800}.portal-actions button.active{background:#064c9a}.portal-submit{width:100%;margin-top:14px}.portal-msg{font-size:13px;padding:10px;border-radius:10px;background:#eef7ff;color:#07569a;margin-top:10px;white-space:pre-wrap}.portal-list{display:grid;gap:10px}.portal-item{border:1px solid #d8e7f2;border-radius:13px;padding:12px;background:#fff}.portal-item strong{color:#064c9a}.portal-item small{display:block;color:#64798a;margin-top:4px;line-height:1.45}.portal-item button{margin:8px 6px 0 0;border:0;border-radius:9px;padding:9px 11px;background:#087bd5;color:white;font-weight:700}.portal-item button.reject{background:#a63a3a}.portal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.primary:disabled{opacity:.65;cursor:wait}.hidden{display:none!important}
@@ -760,6 +765,7 @@ body.jos-order-open .bottom{display:none!important}
   
 </section>
 </main>
+<a id="josHomeChatAdmin" href="chat.html" aria-label="Hubungi Chat Admin JOS"><span>💬</span>Chat Admin</a>
 <nav class="bottom">
 <button type="button" class="nav active" data-nav="Beranda" onclick="josBottomNavigate('home')"><span>⌂</span>Beranda</button>
 <button type="button" class="nav" data-nav="Layanan" onclick="josBottomNavigate('services')"><span>▦</span>Layanan</button>
