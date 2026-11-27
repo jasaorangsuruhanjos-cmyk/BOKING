@@ -208,6 +208,9 @@ body.all-services-mode .section-head a{display:none!important}
 .drawer-head button{margin-left:auto;border:0;border-radius:10px;background:#eff5fa;color:#31516b;width:32px;height:32px;font-size:22px;line-height:1}
 .drawer-links{display:flex;flex-direction:column;align-items:stretch;gap:5px;padding-top:14px}
 .drawer-links button{display:flex;align-items:center;gap:13px;width:100%;min-height:45px;border:0;border-radius:11px;background:transparent;color:#243b52;text-align:left;padding:9px 12px;font-size:12px;font-weight:750}
+.drawer-links .drawer-chat-link{display:flex;align-items:center;gap:13px;width:100%;min-height:45px;border-radius:11px;background:transparent;color:#243b52;text-align:left;padding:9px 12px;font-size:12px;font-weight:750;text-decoration:none}
+.drawer-links .drawer-chat-link:active{background:#eaf5ff;color:var(--blue)}
+.drawer-links .drawer-chat-link span{width:24px;text-align:center;font-size:19px;color:var(--blue);flex:0 0 24px}
 .drawer-links button:active{background:#eaf5ff;color:var(--blue)}
 .drawer-links button span{width:24px;text-align:center;font-size:19px;color:var(--blue);flex:0 0 24px}
 .drawer-divider{height:1px;background:var(--line);margin:8px 3px}
@@ -772,6 +775,7 @@ body.jos-order-open .bottom{display:none!important}
 <button data-drawer="services" type="button"><span>▦</span>Layanan</button>
 <button data-drawer="orders" type="button"><span>▤</span>Pesanan</button>
 <button data-drawer="account" type="button"><span>☺</span>Akun Pelanggan</button>
+<a class="drawer-chat-link" href="chat.html"><span>💬</span>Chat Admin</a>
 </nav>
 <div class="drawer-footer">Bersama JOS, semua pasti beres!</div>
 </aside>
